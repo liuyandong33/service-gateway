@@ -1,4 +1,4 @@
-package build.dream.zuul;
+package build.dream.gateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
