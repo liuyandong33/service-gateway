@@ -2,11 +2,12 @@ package build.dream.gateway.models.weixin;
 
 import build.dream.common.models.BasicModel;
 import build.dream.common.utils.ApplicationHandler;
+import build.dream.gateway.constants.Constants;
 
 import javax.validation.constraints.NotNull;
 
 public class ObtainUserInfoModel extends BasicModel {
-    private static final String[] SCOPES = {"snsapi_base", "snsapi_userinfo"};
+    private static final String[] SCOPES = {Constants.SNSAPI_BASE, Constants.SNSAPI_USERINFO};
     @NotNull
     private String appId;
 

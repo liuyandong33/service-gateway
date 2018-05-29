@@ -37,7 +37,7 @@ public class WeiXinController {
         return "redirect:" + authorizeUrl;
     }
 
-    @RequestMapping(value = "/obtainUserInfo", method = RequestMethod.GET)
+    @RequestMapping(value = "/oauthCallback", method = RequestMethod.GET)
     public String oauthCallback() throws IOException {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
         String code = requestParameters.get("code");
