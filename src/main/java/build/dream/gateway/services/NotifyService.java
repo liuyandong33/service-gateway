@@ -46,7 +46,27 @@ public class NotifyService {
         }
         boolean isOk = AlipayUtils.verifySign(StringUtils.join(sortedParameterPair, "&"), notifyRecord.getAlipaySignType(), sign, charset, notifyRecord.getAlipayPublicKey());
         ValidateUtils.isTrue(isOk, "签名验证未通过！");
+        executeNotify(notifyRecord, callbackParameters);
+    }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void handleWeiXinPayCallback(Map<String, String> callbackParameters) throws IOException {
+        String outTradeNo = callbackParameters.get("out_trade_no");
+        SearchModel searchModel = new SearchModel(true);
+        searchModel.addSearchCondition("uuid", Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
+        NotifyRecord notifyRecord = DatabaseHelper.find(NotifyRecord.class, searchModel);
+        ValidateUtils.notNull(notifyRecord, "通知记录不存在！");
+
+        if (notifyRecord.getNotifyResult() != 1) {
+            return;
+        }
+
+        // 开始验签
+        executeNotify(notifyRecord, callbackParameters);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void executeNotify(NotifyRecord notifyRecord, Map<String, String> callbackParameters) throws IOException {
         int notifyResult = 0;
         try {
             String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildHttpEntity(callbackParameters), String.class);
@@ -61,20 +81,6 @@ public class NotifyService {
         notifyRecord.setNotifyResult(notifyResult);
         notifyRecord.setExternalSystemNotifyRequestBody(GsonUtils.toJson(callbackParameters));
         DatabaseHelper.update(notifyRecord);
-    }
-
-    public void handleWeiXinPayCallback(Map<String, String> callbackParameters) {
-        String outTradeNo = callbackParameters.get("out_trade_no");
-        SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition("uuid", Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
-        NotifyRecord notifyRecord = DatabaseHelper.find(NotifyRecord.class, searchModel);
-        ValidateUtils.notNull(notifyRecord, "通知记录不存在！");
-
-        if (notifyRecord.getNotifyResult() != 1) {
-            return;
-        }
-
-        // 开始验签
     }
 
     @Transactional(readOnly = true)
