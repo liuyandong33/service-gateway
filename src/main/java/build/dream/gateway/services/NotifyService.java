@@ -50,7 +50,7 @@ public class NotifyService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void handleWeiXinPayCallback(Map<String, String> callbackParameters) throws IOException {
+    public void handleWeiXinPayCallback(Map<String, String> callbackParameters) {
         String outTradeNo = callbackParameters.get("out_trade_no");
         SearchModel searchModel = new SearchModel(true);
         searchModel.addSearchCondition("uuid", Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
@@ -65,7 +65,7 @@ public class NotifyService {
         executeNotify(notifyRecord, callbackParameters);
     }
 
-    public void executeNotify(NotifyRecord notifyRecord, Map<String, String> callbackParameters) throws IOException {
+    public void executeNotify(NotifyRecord notifyRecord, Map<String, String> callbackParameters) {
         int notifyResult = 0;
         try {
             String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildHttpEntity(callbackParameters), String.class);
