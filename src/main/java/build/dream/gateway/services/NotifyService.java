@@ -25,7 +25,7 @@ public class NotifyService {
     private RestTemplate restTemplate;
 
     @Transactional(rollbackFor = Exception.class)
-    public void alipayCallback(Map<String, String> callbackParameters) throws NoSuchAlgorithmException, SignatureException, InvalidKeySpecException, InvalidKeyException, IOException {
+    public void handleAlipayCallback(Map<String, String> callbackParameters) throws NoSuchAlgorithmException, SignatureException, InvalidKeySpecException, InvalidKeyException, IOException {
         String outTradeNo = callbackParameters.get("out_trade_no");
         SearchModel searchModel = new SearchModel(true);
         searchModel.addSearchCondition("uuid", Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
@@ -61,6 +61,20 @@ public class NotifyService {
         notifyRecord.setNotifyResult(notifyResult);
         notifyRecord.setExternalSystemNotifyRequestBody(GsonUtils.toJson(callbackParameters));
         DatabaseHelper.update(notifyRecord);
+    }
+
+    public void handleWeiXinPayCallback(Map<String, String> callbackParameters) {
+        String outTradeNo = callbackParameters.get("out_trade_no");
+        SearchModel searchModel = new SearchModel(true);
+        searchModel.addSearchCondition("uuid", Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
+        NotifyRecord notifyRecord = DatabaseHelper.find(NotifyRecord.class, searchModel);
+        ValidateUtils.notNull(notifyRecord, "通知记录不存在！");
+
+        if (notifyRecord.getNotifyResult() != 1) {
+            return;
+        }
+
+        // 开始验签
     }
 
     @Transactional(readOnly = true)
