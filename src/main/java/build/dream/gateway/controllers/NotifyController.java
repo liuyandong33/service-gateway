@@ -45,7 +45,7 @@ public class NotifyController extends BasicController {
             notifyService.handleWeiXinPayCallback(requestParameters);
             returnValue = Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
         } catch (Exception e) {
-            LogUtils.error("微信回调处理失败", className, "weiXinCallback", e, requestParameters);
+            LogUtils.error("微信支付回调处理失败", className, "weiPayXinCallback", e, requestParameters);
             returnValue = Constants.WEI_XIN_PAY_CALLBACK_FAILURE_RETURN_VALUE;
         }
         return returnValue;
