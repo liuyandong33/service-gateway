@@ -4,8 +4,10 @@ import build.dream.common.saas.domains.NotifyRecord;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -19,6 +21,9 @@ import java.util.TreeMap;
 
 @Service
 public class NotifyService {
+    @Autowired
+    private RestTemplate restTemplate;
+
     @Transactional(rollbackFor = Exception.class)
     public void alipayCallback(Map<String, String> callbackParameters) throws NoSuchAlgorithmException, SignatureException, InvalidKeySpecException, InvalidKeyException, IOException {
         String outTradeNo = callbackParameters.get("out_trade_no");
@@ -44,7 +49,7 @@ public class NotifyService {
 
         int notifyResult = 0;
         try {
-            String callbackResult = WebUtils.doPostWithRequestParameters(notifyRecord.getNotifyUrl(), callbackParameters);
+            String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildHttpEntity(callbackParameters), String.class);
             if (Constants.SUCCESS.equals(callbackResult)) {
                 notifyResult = 2;
             } else {
@@ -56,5 +61,23 @@ public class NotifyService {
         notifyRecord.setNotifyResult(notifyResult);
         notifyRecord.setExternalSystemNotifyRequestBody(GsonUtils.toJson(callbackParameters));
         DatabaseHelper.update(notifyRecord);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotifyRecord> obtainAllNotifyRecords() {
+        SearchModel searchModel = new SearchModel(true);
+        searchModel.addSearchCondition("notify_result", Constants.SQL_OPERATION_SYMBOL_EQUAL, 3);
+        List<NotifyRecord> notifyRecords = DatabaseHelper.findAll(NotifyRecord.class, searchModel);
+        return notifyRecords;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void executeNotify(NotifyRecord notifyRecord) throws IOException {
+        Map<String, String> callbackParameters = JacksonUtils.readValueAsMap(notifyRecord.getExternalSystemNotifyRequestBody(), String.class, String.class);
+        String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildHttpEntity(callbackParameters), String.class);
+        if (Constants.SUCCESS.equals(callbackResult)) {
+            notifyRecord.setNotifyResult(2);
+            DatabaseHelper.update(notifyRecord);
+        }
     }
 }
