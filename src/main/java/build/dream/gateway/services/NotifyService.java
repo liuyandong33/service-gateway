@@ -65,7 +65,6 @@ public class NotifyService {
         executeNotify(notifyRecord, callbackParameters);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void executeNotify(NotifyRecord notifyRecord, Map<String, String> callbackParameters) throws IOException {
         int notifyResult = 0;
         try {
