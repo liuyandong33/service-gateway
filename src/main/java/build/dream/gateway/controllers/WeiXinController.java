@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +17,7 @@ import java.util.Map;
 @RequestMapping(value = "/weiXin")
 public class WeiXinController {
     @RequestMapping(value = "/obtainUserInfo", method = RequestMethod.GET)
-    public String obtainUserInfo() throws InstantiationException, IllegalAccessException, ParseException, NoSuchFieldException, IOException {
+    public String obtainUserInfo() throws Exception {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
         ObtainUserInfoModel obtainUserInfoModel = ApplicationHandler.instantiateObject(ObtainUserInfoModel.class, requestParameters);
         obtainUserInfoModel.validateAndThrow();
@@ -32,7 +31,7 @@ public class WeiXinController {
         parameters.put("redirectUri", redirectUri);
         parameters.put("appId", appId);
 
-        String outsideUrl = SystemPartitionUtils.getOutsideUrl(Constants.SERVICE_NAME_GATEWAY, "weiXin", "obtainUserInfo");
+        String outsideUrl = CommonUtils.getOutsideUrl(Constants.SERVICE_NAME_GATEWAY, "weiXin", "oauthCallback");
         String authorizeUrl = WeiXinUtils.generateAuthorizeUrl(appId, scope, outsideUrl + "?redirectUri=" + WebUtils.buildQueryString(parameters), state);
         return "redirect:" + authorizeUrl;
     }
