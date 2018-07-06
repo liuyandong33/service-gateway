@@ -32,6 +32,9 @@ public class UrlPathFilter extends ZuulFilter {
         String serviceId = requestContext.get(FilterConstants.PROXY_KEY).toString();
         if (Constants.SERVICE_NAME_POSAPI.equals(serviceId)) {
             Map<String, List<String>> requestQueryParams = (Map<String, List<String>>) requestContext.get("requestQueryParams");
+            if (MapUtils.isEmpty(requestQueryParams)) {
+                return false;
+            }
             if (CollectionUtils.isNotEmpty(requestQueryParams.get("partitionCode"))) {
                 return true;
             }
@@ -51,6 +54,9 @@ public class UrlPathFilter extends ZuulFilter {
     public Object run() {
         RequestContext requestContext = RequestContext.getCurrentContext();
         Map<String, List<String>> requestQueryParams = (Map<String, List<String>>) requestContext.get("requestQueryParams");
+        if (MapUtils.isEmpty(requestQueryParams)) {
+            return null;
+        }
         String partitionCode = StringUtils.join(requestQueryParams.get("partitionCode"), ",");
         String deploymentEnvironment = ConfigurationUtils.getConfigurationSafe(Constants.DEPLOYMENT_ENVIRONMENT);
         if (StringUtils.isNotBlank(partitionCode)) {
