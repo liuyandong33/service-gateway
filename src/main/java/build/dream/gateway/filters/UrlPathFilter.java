@@ -29,8 +29,8 @@ public class UrlPathFilter extends ZuulFilter {
     @Override
     public boolean shouldFilter() {
         RequestContext requestContext = RequestContext.getCurrentContext();
-        String serviceId = requestContext.get(FilterConstants.PROXY_KEY).toString();
-        if (Constants.SERVICE_NAME_POSAPI.equals(serviceId)) {
+        String serviceId = requestContext.get(FilterConstants.SERVICE_ID_KEY).toString();
+        if ((ConfigurationUtils.getConfigurationSafe(Constants.DEPLOYMENT_ENVIRONMENT) + "-" + Constants.SERVICE_NAME_POSAPI).equals(serviceId)) {
             Map<String, List<String>> requestQueryParams = (Map<String, List<String>>) requestContext.get("requestQueryParams");
             if (MapUtils.isEmpty(requestQueryParams)) {
                 return false;
