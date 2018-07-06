@@ -15,7 +15,7 @@ import java.util.Map;
 public class UrlPathFilter extends ZuulFilter {
     @Override
     public String filterType() {
-        return FilterConstants.ROUTE_TYPE;
+        return FilterConstants.PRE_TYPE;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class UrlPathFilter extends ZuulFilter {
 
         String tenantCode = StringUtils.join(requestQueryParams.get("tenantCode"), ",");
         if (StringUtils.isNotBlank(tenantCode)) {
-            requestContext.put(FilterConstants.PROXY_KEY, Constants.SERVICE_NAME_PLATFORM);
+            requestContext.put(FilterConstants.SERVICE_ID_KEY, Constants.SERVICE_NAME_PLATFORM);
             requestContext.put(FilterConstants.REQUEST_URI_KEY, "/order/obtainOrderInfo");
             return null;
         }
