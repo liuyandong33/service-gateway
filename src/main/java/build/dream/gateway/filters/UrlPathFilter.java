@@ -1,5 +1,6 @@
 package build.dream.gateway.filters;
 
+import build.dream.common.saas.domains.Tenant;
 import build.dream.common.utils.CommonUtils;
 import build.dream.common.utils.ConfigurationUtils;
 import build.dream.gateway.constants.Constants;
@@ -67,9 +68,9 @@ public class UrlPathFilter extends ZuulFilter {
         List<String> tenantIds = requestQueryParams.get("tenantId");
         if (CollectionUtils.isNotEmpty(tenantIds)) {
             String tenantId = tenantIds.get(0);
-            Map<String, Object> tenantInfo = CommonUtils.obtainTenantInfo(tenantId, null);
-            if (MapUtils.isNotEmpty(tenantInfo)) {
-                requestContext.put(FilterConstants.SERVICE_ID_KEY, deploymentEnvironment + "-" + MapUtils.getString(tenantInfo, "partitionCode") + "-" + Constants.SERVICE_NAME_POSAPI);
+            Tenant tenant = CommonUtils.obtainTenantInfo(tenantId, null);
+            if (tenant != null) {
+                requestContext.put(FilterConstants.SERVICE_ID_KEY, deploymentEnvironment + "-" + tenant.getPartitionCode() + "-" + Constants.SERVICE_NAME_POSAPI);
                 return null;
             }
         }
@@ -77,9 +78,9 @@ public class UrlPathFilter extends ZuulFilter {
         List<String> tenantCodes = requestQueryParams.get("tenantCode");
         if (CollectionUtils.isNotEmpty(tenantCodes)) {
             String tenantCode = tenantCodes.get(0);
-            Map<String, Object> tenantInfo = CommonUtils.obtainTenantInfo(null, tenantCode);
-            if (MapUtils.isNotEmpty(tenantInfo)) {
-                requestContext.put(FilterConstants.SERVICE_ID_KEY, deploymentEnvironment + "-" + MapUtils.getString(tenantInfo, "partitionCode") + "-" + Constants.SERVICE_NAME_POSAPI);
+            Tenant tenant = CommonUtils.obtainTenantInfo(null, tenantCode);
+            if (tenant != null) {
+                requestContext.put(FilterConstants.SERVICE_ID_KEY, deploymentEnvironment + "-" + tenant.getPartitionCode() + "-" + Constants.SERVICE_NAME_POSAPI);
                 return null;
             }
         }
