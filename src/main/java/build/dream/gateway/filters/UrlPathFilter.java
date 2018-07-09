@@ -1,9 +1,13 @@
 package build.dream.gateway.filters;
 
+import build.dream.common.saas.domains.Tenant;
+import build.dream.common.utils.CommonUtils;
+import build.dream.common.utils.ConfigurationUtils;
 import build.dream.gateway.constants.Constants;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
 import org.springframework.stereotype.Component;
@@ -26,9 +30,12 @@ public class UrlPathFilter extends ZuulFilter {
     @Override
     public boolean shouldFilter() {
         RequestContext requestContext = RequestContext.getCurrentContext();
-        String serviceId = requestContext.get(FilterConstants.PROXY_KEY).toString();
-        if (Constants.SERVICE_NAME_POSAPI.equals(serviceId)) {
+        String serviceId = requestContext.get(FilterConstants.SERVICE_ID_KEY).toString();
+        if ((ConfigurationUtils.getConfigurationSafe(Constants.DEPLOYMENT_ENVIRONMENT) + "-" + Constants.SERVICE_NAME_POSAPI).equals(serviceId)) {
             Map<String, List<String>> requestQueryParams = (Map<String, List<String>>) requestContext.get("requestQueryParams");
+            if (MapUtils.isEmpty(requestQueryParams)) {
+                return false;
+            }
             if (CollectionUtils.isNotEmpty(requestQueryParams.get("partitionCode"))) {
                 return true;
             }
@@ -37,15 +44,7 @@ public class UrlPathFilter extends ZuulFilter {
                 return true;
             }
 
-            if (CollectionUtils.isNotEmpty(requestQueryParams.get("branchId"))) {
-                return true;
-            }
-
             if (CollectionUtils.isNotEmpty(requestQueryParams.get("tenantCode"))) {
-                return true;
-            }
-
-            if (CollectionUtils.isNotEmpty(requestQueryParams.get("branchCode"))) {
                 return true;
             }
         }
@@ -56,35 +55,34 @@ public class UrlPathFilter extends ZuulFilter {
     public Object run() {
         RequestContext requestContext = RequestContext.getCurrentContext();
         Map<String, List<String>> requestQueryParams = (Map<String, List<String>>) requestContext.get("requestQueryParams");
+        if (MapUtils.isEmpty(requestQueryParams)) {
+            return null;
+        }
         String partitionCode = StringUtils.join(requestQueryParams.get("partitionCode"), ",");
+        String deploymentEnvironment = ConfigurationUtils.getConfigurationSafe(Constants.DEPLOYMENT_ENVIRONMENT);
         if (StringUtils.isNotBlank(partitionCode)) {
-            requestContext.put(FilterConstants.PROXY_KEY, Constants.SERVICE_NAME_PLATFORM);
+            requestContext.put(FilterConstants.SERVICE_ID_KEY, deploymentEnvironment + "-" + partitionCode + "-" + Constants.SERVICE_NAME_POSAPI);
             return null;
         }
 
-        String tenantId = StringUtils.join(requestQueryParams.get("tenantId"), ",");
-        if (StringUtils.isNotBlank(tenantId)) {
-            requestContext.put(FilterConstants.PROXY_KEY, Constants.SERVICE_NAME_PLATFORM);
-            return null;
+        List<String> tenantIds = requestQueryParams.get("tenantId");
+        if (CollectionUtils.isNotEmpty(tenantIds)) {
+            String tenantId = tenantIds.get(0);
+            Tenant tenant = CommonUtils.obtainTenantInfo(tenantId, null);
+            if (tenant != null) {
+                requestContext.put(FilterConstants.SERVICE_ID_KEY, deploymentEnvironment + "-" + tenant.getPartitionCode() + "-" + Constants.SERVICE_NAME_POSAPI);
+                return null;
+            }
         }
 
-        String branchId = StringUtils.join(requestQueryParams.get("branchId"), ",");
-        if (StringUtils.isNotBlank(branchId)) {
-            requestContext.put(FilterConstants.PROXY_KEY, Constants.SERVICE_NAME_PLATFORM);
-            return null;
-        }
-
-        String tenantCode = StringUtils.join(requestQueryParams.get("tenantCode"), ",");
-        if (StringUtils.isNotBlank(tenantCode)) {
-            requestContext.put(FilterConstants.SERVICE_ID_KEY, Constants.SERVICE_NAME_PLATFORM);
-            requestContext.put(FilterConstants.REQUEST_URI_KEY, "/order/obtainOrderInfo");
-            return null;
-        }
-
-        String branchCode = StringUtils.join(requestQueryParams.get("branchCode"), ",");
-        if (StringUtils.isNotBlank(branchCode)) {
-            requestContext.put(FilterConstants.PROXY_KEY, Constants.SERVICE_NAME_PLATFORM);
-            return null;
+        List<String> tenantCodes = requestQueryParams.get("tenantCode");
+        if (CollectionUtils.isNotEmpty(tenantCodes)) {
+            String tenantCode = tenantCodes.get(0);
+            Tenant tenant = CommonUtils.obtainTenantInfo(null, tenantCode);
+            if (tenant != null) {
+                requestContext.put(FilterConstants.SERVICE_ID_KEY, deploymentEnvironment + "-" + tenant.getPartitionCode() + "-" + Constants.SERVICE_NAME_POSAPI);
+                return null;
+            }
         }
         return null;
     }
