@@ -31,7 +31,7 @@ public class ElemeController extends BasicController {
                 returnValue = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             } else if (WebUtils.RequestMethod.POST.equals(method)) {
                 String callbackRequestBody = WebUtils.inputStreamToString(httpServletRequest.getInputStream());
-                Validate.notNull(callbackRequestBody, "订单回调请求体不能为空！");
+                Validate.notNull(callbackRequestBody, "回调请求体不能为空！");
                 returnValue = elemeService.handleElemeCallback(callbackRequestBody);
             }
         } catch (Exception e) {
