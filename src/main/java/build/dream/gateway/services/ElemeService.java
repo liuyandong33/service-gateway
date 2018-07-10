@@ -9,8 +9,10 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.concurrent.ListenableFuture;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -58,7 +60,7 @@ public class ElemeService {
                 elemeMessage.put("count", 10);
 
                 String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.ELEME_MESSAGE_TOPIC);
-                kafkaTemplate.send(topic, 10, uuid, GsonUtils.toJson(elemeMessage));
+                ListenableFuture<SendResult<String, String>> listenableFuture = kafkaTemplate.send(topic, uuid, GsonUtils.toJson(elemeMessage));
                 handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             }
         } catch (Exception e) {
