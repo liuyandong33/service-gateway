@@ -1,9 +1,6 @@
 package build.dream.gateway.services;
 
-import build.dream.common.utils.CacheUtils;
-import build.dream.common.utils.ConfigurationUtils;
-import build.dream.common.utils.ElemeUtils;
-import build.dream.common.utils.GsonUtils;
+import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.mappers.TenantMapper;
 import net.sf.json.JSONObject;
@@ -14,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import scala.Tuple2;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -25,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 public class ElemeService {
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
-    @Autowired
-    private TenantMapper tenantMapper;
 
     @Transactional(readOnly = true)
     public String handleElemeCallback(String callbackRequestBody) throws IOException {
@@ -51,7 +47,7 @@ public class ElemeService {
             CacheUtils.expire(key, 1800, TimeUnit.SECONDS);
             BigInteger shopId = BigInteger.valueOf(callbackRequestBodyJsonObject.getLong("shopId"));
 
-            Map<String, Object> tenantInfo = tenantMapper.obtainTenantInfo(shopId);
+            Map<String, Object> tenantInfo = DatabaseHelper.callMapperMethod(Map.class, TenantMapper.class, "obtainTenantInfo", new Tuple2<Class<?>, Object>(BigInteger.class, shopId));
             if (MapUtils.isEmpty(tenantInfo)) {
                 handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             } else {
