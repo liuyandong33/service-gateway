@@ -7,6 +7,8 @@ import net.sf.json.JSONObject;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.Validate;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -19,6 +21,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -27,7 +30,7 @@ public class ElemeService {
     private KafkaTemplate<String, String> kafkaTemplate;
 
     @Transactional(readOnly = true)
-    public String handleElemeCallback(String callbackRequestBody) throws IOException {
+    public String handleElemeCallback(String callbackRequestBody) throws IOException, ExecutionException, InterruptedException {
         JSONObject callbackRequestBodyJsonObject = JSONObject.fromObject(callbackRequestBody);
         Validate.isTrue(ElemeUtils.checkSignature(callbackRequestBodyJsonObject, ConfigurationUtils.getConfiguration(Constants.ELEME_APP_SECRET)), "签名校验未通过！");
 
@@ -43,7 +46,7 @@ public class ElemeService {
         return handleResult;
     }
 
-    private String handleElemeCallback(String key, String uuid, JSONObject callbackRequestBodyJsonObject) throws IOException {
+    private String handleElemeCallback(String key, String uuid, JSONObject callbackRequestBodyJsonObject) throws IOException, ExecutionException, InterruptedException {
         String handleResult = null;
         try {
             CacheUtils.expire(key, 1800, TimeUnit.SECONDS);
@@ -61,6 +64,9 @@ public class ElemeService {
 
                 String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.ELEME_MESSAGE_TOPIC);
                 ListenableFuture<SendResult<String, String>> listenableFuture = kafkaTemplate.send(topic, uuid, GsonUtils.toJson(elemeMessage));
+                SendResult<String, String> sendResult = listenableFuture.get();
+                ProducerRecord<String, String> producerRecord = sendResult.getProducerRecord();
+                RecordMetadata recordMetadata = sendResult.getRecordMetadata();
                 handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             }
         } catch (Exception e) {
