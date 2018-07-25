@@ -72,9 +72,9 @@ class MediaController {
     /**
      * 显示外部图片，绕过防盗链
      */
-    @RequestMapping(value = "/doGetOriginal")
+    @RequestMapping(value = "/doGet")
     @ResponseBody
-    public void doGetOriginal() throws IOException {
+    public void doGet() throws IOException {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
         String url = requestParameters.get("url");
         OutUtils.doGetWithRequestParameters(url, null, null, ApplicationHandler.getHttpServletResponse());
