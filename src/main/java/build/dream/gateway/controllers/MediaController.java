@@ -1,11 +1,9 @@
 package build.dream.gateway.controllers;
 
-import build.dream.common.utils.ApplicationHandler;
-import build.dream.common.utils.MimeMappingUtils;
-import build.dream.common.utils.OutUtils;
-import build.dream.common.utils.QRCodeUtils;
+import build.dream.common.utils.*;
 import com.google.zxing.WriterException;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -74,9 +72,9 @@ class MediaController {
      */
     @RequestMapping(value = "/doGet")
     @ResponseBody
-    public void doGet() throws IOException {
+    public ResponseEntity<byte[]> doGet() throws IOException {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
         String url = requestParameters.get("url");
-        OutUtils.doGetWithRequestParameters(url, null, null, ApplicationHandler.getHttpServletResponse());
+        return OutUtils.doGet(url, null);
     }
 }
