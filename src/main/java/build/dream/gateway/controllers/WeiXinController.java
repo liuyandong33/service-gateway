@@ -37,8 +37,8 @@ public class WeiXinController {
         parameters.put("redirectUri", redirectUri);
         parameters.put("appId", appId);
 
-        String outsideUrl = CommonUtils.getOutsideUrl(Constants.SERVICE_NAME_GATEWAY, "weiXin", "oauthCallback");
-        String authorizeUrl = WeiXinUtils.generateAuthorizeUrl(appId, scope, outsideUrl + "?redirectUri=" + WebUtils.buildQueryString(parameters), state);
+        String outsideUrl = CommonUtils.getOutsideUrl(Constants.SERVICE_NAME_GATEWAY, "weiXin", "oauthCallback") + "?" + WebUtils.buildQueryString(parameters);
+        String authorizeUrl = WeiXinUtils.generateAuthorizeUrl(appId, scope, outsideUrl, state);
         return "redirect:" + authorizeUrl;
     }
 
