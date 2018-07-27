@@ -3,8 +3,11 @@ package build.dream.gateway.controllers;
 import build.dream.common.beans.WeiXinOAuthAccessToken;
 import build.dream.common.beans.WeiXinUserInfo;
 import build.dream.common.constants.Constants;
+import build.dream.common.saas.domains.WeiXinPublicAccount;
 import build.dream.common.utils.*;
 import build.dream.gateway.models.weixin.ObtainUserInfoModel;
+import build.dream.gateway.services.WeiXinService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -16,6 +19,9 @@ import java.util.Map;
 @Controller
 @RequestMapping(value = "/weiXin")
 public class WeiXinController {
+    @Autowired
+    private WeiXinService weiXinService;
+
     @RequestMapping(value = "/obtainUserInfo", method = RequestMethod.GET)
     public String obtainUserInfo() throws Exception {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
@@ -42,9 +48,11 @@ public class WeiXinController {
         String code = requestParameters.get("code");
         String redirectUri = requestParameters.get("redirectUri");
         String appId = requestParameters.get("appId");
-        String secret = "";
 
-        WeiXinOAuthAccessToken weiXinOAuthAccessToken = WeiXinUtils.obtainOAuthAccessToken(appId, secret, code);
+        WeiXinPublicAccount weiXinPublicAccount = weiXinService.obtainWeiXinPublicAccount(appId);
+        ValidateUtils.notNull(weiXinPublicAccount, "微信公众号不存在！");
+
+        WeiXinOAuthAccessToken weiXinOAuthAccessToken = WeiXinUtils.obtainOAuthAccessToken(appId, weiXinPublicAccount.getAppSecret(), code);
 
         Map<String, String> parameters = new HashMap<String, String>();
 
