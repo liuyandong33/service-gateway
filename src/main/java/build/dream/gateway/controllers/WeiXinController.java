@@ -7,6 +7,7 @@ import build.dream.common.saas.domains.WeiXinPublicAccount;
 import build.dream.common.utils.*;
 import build.dream.gateway.models.weixin.ObtainUserInfoModel;
 import build.dream.gateway.services.WeiXinService;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,6 +49,7 @@ public class WeiXinController {
         String code = requestParameters.get("code");
         String redirectUri = requestParameters.get("redirectUri");
         String appId = requestParameters.get("appId");
+        String state = requestParameters.get("state");
 
         WeiXinPublicAccount weiXinPublicAccount = weiXinService.obtainWeiXinPublicAccount(appId);
         ValidateUtils.notNull(weiXinPublicAccount, "微信公众号不存在！");
@@ -65,6 +67,10 @@ public class WeiXinController {
         } else if (Constants.SNSAPI_USERINFO.equals(scope)) {
             WeiXinUserInfo weiXinUserInfo = WeiXinUtils.obtainUserInfo(weiXinOAuthAccessToken.getAccessToken(), openId, null);
             parameters.put("userInfo", GsonUtils.toJson(weiXinUserInfo));
+        }
+
+        if (StringUtils.isNotBlank(state)) {
+            parameters.put("state", state);
         }
 
         StringBuilder url = new StringBuilder(redirectUri);
