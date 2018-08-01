@@ -9,8 +9,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.Validate;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +24,6 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class ElemeService {
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
-
     @Transactional(readOnly = true)
     public String handleElemeCallback(String callbackRequestBody) throws IOException, ExecutionException, InterruptedException {
         JSONObject callbackRequestBodyJsonObject = JSONObject.fromObject(callbackRequestBody);
@@ -63,7 +58,7 @@ public class ElemeService {
                 elemeMessage.put("count", 10);
 
                 String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.ELEME_MESSAGE_TOPIC);
-                ListenableFuture<SendResult<String, String>> listenableFuture = kafkaTemplate.send(topic, uuid, GsonUtils.toJson(elemeMessage));
+                ListenableFuture<SendResult<String, String>> listenableFuture = KafkaUtils.send(topic, uuid, GsonUtils.toJson(elemeMessage));
                 SendResult<String, String> sendResult = listenableFuture.get();
                 ProducerRecord<String, String> producerRecord = sendResult.getProducerRecord();
                 RecordMetadata recordMetadata = sendResult.getRecordMetadata();

@@ -34,14 +34,13 @@ dependencyManagement {
 }
 
 dependencies {
-//    compile("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     compile fileTree(include: ["*.jar"], dir: "libs")
+    compile("org.scala-lang:scala-library:2.12.5")
     compile("org.springframework.cloud:spring-cloud-starter-zookeeper-discovery")
     compile("org.springframework.cloud:spring-cloud-starter-zookeeper-config")
     compile("org.springframework.cloud:spring-cloud-starter-netflix-zuul")
     compile("org.springframework.kafka:spring-kafka:2.1.5.RELEASE")
     compile("org.springframework.boot:spring-boot-starter-data-redis")
-    compile group: "org.scala-lang", name: "scala-library", version: '2.12.5'
 
     compile("org.mybatis.spring.boot:mybatis-spring-boot-starter:1.3.0")
     compile("com.alibaba:druid:1.1.9")
