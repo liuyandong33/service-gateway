@@ -7,13 +7,20 @@ import build.dream.common.saas.domains.WeiXinPublicAccount;
 import build.dream.common.utils.*;
 import build.dream.gateway.models.weixin.ObtainUserInfoModel;
 import build.dream.gateway.services.WeiXinService;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
+import org.dom4j.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,5 +87,65 @@ public class WeiXinController {
             url.append("?");
         }
         return "redirect:" + url.append(WebUtils.buildQueryString(parameters)).toString();
+    }
+
+    @RequestMapping(value = "/authCallback")
+    @ResponseBody
+    public String authCallback(HttpServletRequest httpServletRequest) throws IOException, DocumentException {
+        InputStream inputStream = httpServletRequest.getInputStream();
+        String requestBody = IOUtils.toString(inputStream);
+        Map<String, String> requestBodyMap = WebUtils.xmlStringToMap(requestBody);
+        String appId = requestBodyMap.get("AppId");
+        String encrypt = requestBodyMap.get("Encrypt");
+
+        String encodingAesKey = obtainEncodingAesKey(appId);
+
+        byte[] encryptedData = Base64.decodeBase64(encrypt);
+        byte[] aesKey = Base64.decodeBase64(encodingAesKey);
+        byte[] iv = Arrays.copyOfRange(aesKey, 0, 16);
+
+        byte[] original = AESUtils.decrypt(encryptedData, aesKey, iv, AESUtils.ALGORITHM_AES_CBC_NOPADDING);
+        byte[] bytes = original = decode(original);
+
+        byte[] networkOrder = Arrays.copyOfRange(bytes, 16, 20);
+        int xmlLength = recoverNetworkBytesOrder(networkOrder);
+
+        String xmlContent = new String(Arrays.copyOfRange(original, 20, 20 + xmlLength), Constants.CHARSET_UTF_8);
+
+        Map<String, String> encryptMap = WebUtils.xmlStringToMap(xmlContent);
+
+        ValidateUtils.isTrue(appId.equals(encryptMap.get("AppId")), "消息内容非法！");
+
+        String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
+        CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKET, appId, componentVerifyTicket);
+        System.out.println(encryptMap);
+        return Constants.SUCCESS;
+    }
+
+    private byte[] decode(byte[] decrypted) {
+        int pad = (int) decrypted[decrypted.length - 1];
+        if (pad < 1 || pad > 32) {
+            pad = 0;
+        }
+        return Arrays.copyOfRange(decrypted, 0, decrypted.length - pad);
+    }
+
+    private int recoverNetworkBytesOrder(byte[] orderBytes) {
+        int sourceNumber = 0;
+        for (int i = 0; i < 4; i++) {
+            sourceNumber <<= 8;
+            sourceNumber |= orderBytes[i] & 0xff;
+        }
+        return sourceNumber;
+    }
+
+    private String obtainEncodingAesKey(String appId) {
+        return "iy6GM2pYESgLOJh5MrzeaBgiEVpK4eaW5Y2SApp70FL";
+    }
+
+    @RequestMapping(value = "/messageCallback/{appId}")
+    @ResponseBody
+    public String messageCallback(@PathVariable(value = "appId") String appId) {
+        return Constants.SUCCESS;
     }
 }
