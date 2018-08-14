@@ -3,6 +3,7 @@ package build.dream.gateway.controllers;
 import build.dream.common.beans.WeiXinOAuthAccessToken;
 import build.dream.common.beans.WeiXinUserInfo;
 import build.dream.common.constants.Constants;
+import build.dream.common.saas.domains.WeiXinOpenPlatformApplication;
 import build.dream.common.saas.domains.WeiXinPublicAccount;
 import build.dream.common.utils.*;
 import build.dream.gateway.models.weixin.ObtainUserInfoModel;
@@ -98,7 +99,11 @@ public class WeiXinController {
         String appId = requestBodyMap.get("AppId");
         String encrypt = requestBodyMap.get("Encrypt");
 
-        String encodingAesKey = obtainEncodingAesKey(appId);
+        WeiXinOpenPlatformApplication weiXinOpenPlatformApplication = weiXinService.obtainWeiXinOpenPlatformApplication(appId);
+        if (weiXinOpenPlatformApplication == null) {
+            return Constants.SUCCESS;
+        }
+        String encodingAesKey = weiXinOpenPlatformApplication.getEncodingAesKey();
 
         byte[] encryptedData = Base64.decodeBase64(encrypt);
         byte[] aesKey = Base64.decodeBase64(encodingAesKey);
@@ -118,7 +123,6 @@ public class WeiXinController {
 
         String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
         CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKET, appId, componentVerifyTicket);
-        System.out.println(encryptMap);
         return Constants.SUCCESS;
     }
 
@@ -139,13 +143,12 @@ public class WeiXinController {
         return sourceNumber;
     }
 
-    private String obtainEncodingAesKey(String appId) {
-        return "iy6GM2pYESgLOJh5MrzeaBgiEVpK4eaW5Y2SApp70FL";
-    }
-
     @RequestMapping(value = "/messageCallback/{appId}")
     @ResponseBody
     public String messageCallback(@PathVariable(value = "appId") String appId) {
-        return Constants.SUCCESS;
+        String componentAppId = "wx3465dea1e67a3131";
+        String componentAppSecret = "587ad4920d1767e10ce7503da86ac1a3";
+        String preAuthCode = WeiXinUtils.obtainPreAuthCode(componentAppId, componentAppSecret, appId);
+        return preAuthCode;
     }
 }
