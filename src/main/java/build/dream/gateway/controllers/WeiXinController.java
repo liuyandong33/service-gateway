@@ -143,6 +143,11 @@ public class WeiXinController {
         return sourceNumber;
     }
 
+    @RequestMapping(value = "/demo")
+    public String demo() {
+        return "weiXin/demo";
+    }
+
     @RequestMapping(value = "/messageCallback/{appId}")
     @ResponseBody
     public String messageCallback(@PathVariable(value = "appId") String appId) {
