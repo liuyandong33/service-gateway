@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping(value = "/weiXin")
@@ -104,8 +105,18 @@ public class WeiXinController {
             return Constants.SUCCESS;
         }
         String encodingAesKey = weiXinOpenPlatformApplication.getEncodingAesKey();
+        String xmlContent = decrypt(encrypt, encodingAesKey);
+        Map<String, String> encryptMap = WebUtils.xmlStringToMap(xmlContent);
 
-        byte[] encryptedData = Base64.decodeBase64(encrypt);
+        ValidateUtils.isTrue(appId.equals(encryptMap.get("AppId")), "消息内容非法！");
+
+        String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
+        CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKET, appId, componentVerifyTicket);
+        return Constants.SUCCESS;
+    }
+
+    private String decrypt(String data, String encodingAesKey) {
+        byte[] encryptedData = Base64.decodeBase64(data);
         byte[] aesKey = Base64.decodeBase64(encodingAesKey);
         byte[] iv = Arrays.copyOfRange(aesKey, 0, 16);
 
@@ -115,15 +126,8 @@ public class WeiXinController {
         byte[] networkOrder = Arrays.copyOfRange(bytes, 16, 20);
         int xmlLength = recoverNetworkBytesOrder(networkOrder);
 
-        String xmlContent = new String(Arrays.copyOfRange(original, 20, 20 + xmlLength), Constants.CHARSET_UTF_8);
-
-        Map<String, String> encryptMap = WebUtils.xmlStringToMap(xmlContent);
-
-        ValidateUtils.isTrue(appId.equals(encryptMap.get("AppId")), "消息内容非法！");
-
-        String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
-        CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKET, appId, componentVerifyTicket);
-        return Constants.SUCCESS;
+        String plaintext = new String(Arrays.copyOfRange(original, 20, 20 + xmlLength), Constants.CHARSET_UTF_8);
+        return plaintext;
     }
 
     private byte[] decode(byte[] decrypted) {
@@ -150,10 +154,23 @@ public class WeiXinController {
 
     @RequestMapping(value = "/messageCallback/{appId}")
     @ResponseBody
-    public String messageCallback(@PathVariable(value = "appId") String appId) {
-        String componentAppId = "wx3465dea1e67a3131";
-        String componentAppSecret = "587ad4920d1767e10ce7503da86ac1a3";
-        String preAuthCode = WeiXinUtils.obtainPreAuthCode(componentAppId, componentAppSecret, appId);
-        return preAuthCode;
+    public String messageCallback(@PathVariable(value = "appId") String appId, HttpServletRequest httpServletRequest) throws IOException, DocumentException {
+        InputStream inputStream = httpServletRequest.getInputStream();
+        String requestBody = IOUtils.toString(inputStream);
+
+        WeiXinOpenPlatformApplication weiXinOpenPlatformApplication = weiXinService.obtainWeiXinOpenPlatformApplication(appId);
+        if (weiXinOpenPlatformApplication == null) {
+            return Constants.SUCCESS;
+        }
+        String encodingAesKey = weiXinOpenPlatformApplication.getEncodingAesKey();
+
+        String message = decrypt(requestBody, encodingAesKey);
+        Map<String, String> xmlMap = WebUtils.xmlStringToMap(message);
+        String msgType = xmlMap.get("MsgType");
+        String event = xmlMap.get("Event");
+
+        KafkaUtils.send("_wei_xin_message_topic_" + msgType + "_" + event, UUID.randomUUID().toString(), GsonUtils.toJson(xmlMap));
+
+        return Constants.SUCCESS;
     }
 }
