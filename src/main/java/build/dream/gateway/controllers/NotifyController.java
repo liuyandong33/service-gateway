@@ -3,7 +3,6 @@ package build.dream.gateway.controllers;
 import build.dream.common.controllers.BasicController;
 import build.dream.common.utils.ApplicationHandler;
 import build.dream.common.utils.LogUtils;
-import build.dream.common.utils.WebUtils;
 import build.dream.common.utils.XmlUtils;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.services.NotifyService;
