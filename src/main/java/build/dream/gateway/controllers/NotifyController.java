@@ -4,6 +4,7 @@ import build.dream.common.controllers.BasicController;
 import build.dream.common.utils.ApplicationHandler;
 import build.dream.common.utils.LogUtils;
 import build.dream.common.utils.WebUtils;
+import build.dream.common.utils.XmlUtils;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.services.NotifyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +42,7 @@ public class NotifyController extends BasicController {
         String returnValue = null;
         Map<String, String> requestParameters = null;
         try {
-            requestParameters = WebUtils.xmlInputStreamToMap(httpServletRequest.getInputStream());
+            requestParameters = XmlUtils.xmlInputStreamToMap(httpServletRequest.getInputStream());
             notifyService.handleWeiXinPayCallback(requestParameters);
             returnValue = Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
         } catch (Exception e) {

@@ -2,6 +2,7 @@ package build.dream.gateway.controllers;
 
 import build.dream.common.controllers.BasicController;
 import build.dream.common.utils.ApplicationHandler;
+import build.dream.common.utils.IOUtils;
 import build.dream.common.utils.LogUtils;
 import build.dream.common.utils.WebUtils;
 import build.dream.gateway.constants.Constants;
@@ -30,7 +31,7 @@ public class ElemeController extends BasicController {
             if (WebUtils.RequestMethod.GET.equals(method)) {
                 returnValue = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             } else if (WebUtils.RequestMethod.POST.equals(method)) {
-                String callbackRequestBody = WebUtils.inputStreamToString(httpServletRequest.getInputStream());
+                String callbackRequestBody = IOUtils.toString(httpServletRequest.getInputStream());
                 Validate.notNull(callbackRequestBody, "回调请求体不能为空！");
                 returnValue = elemeService.handleElemeCallback(callbackRequestBody);
             }

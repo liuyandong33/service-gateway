@@ -96,7 +96,7 @@ public class WeiXinController {
     public String authCallback(HttpServletRequest httpServletRequest) throws IOException, DocumentException {
         InputStream inputStream = httpServletRequest.getInputStream();
         String requestBody = IOUtils.toString(inputStream);
-        Map<String, String> requestBodyMap = WebUtils.xmlStringToMap(requestBody);
+        Map<String, String> requestBodyMap = XmlUtils.xmlStringToMap(requestBody);
         String appId = requestBodyMap.get("AppId");
         String encrypt = requestBodyMap.get("Encrypt");
 
@@ -106,7 +106,7 @@ public class WeiXinController {
         }
         String encodingAesKey = weiXinOpenPlatformApplication.getEncodingAesKey();
         String xmlContent = decrypt(encrypt, encodingAesKey);
-        Map<String, String> encryptMap = WebUtils.xmlStringToMap(xmlContent);
+        Map<String, String> encryptMap = XmlUtils.xmlStringToMap(xmlContent);
 
         ValidateUtils.isTrue(appId.equals(encryptMap.get("AppId")), "消息内容非法！");
 
@@ -165,7 +165,7 @@ public class WeiXinController {
         String encodingAesKey = weiXinOpenPlatformApplication.getEncodingAesKey();
 
         String message = decrypt(requestBody, encodingAesKey);
-        Map<String, String> xmlMap = WebUtils.xmlStringToMap(message);
+        Map<String, String> xmlMap = XmlUtils.xmlStringToMap(message);
         String msgType = xmlMap.get("MsgType");
         String event = xmlMap.get("Event");
 
