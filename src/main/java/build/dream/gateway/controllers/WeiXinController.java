@@ -149,7 +149,7 @@ public class WeiXinController {
     }
 
     @RequestMapping(value = "/demo")
-    public ModelAndView demo() {
+    public ModelAndView demo() throws IOException {
         String componentAppId = "wx3465dea1e67a3131";
         String componentAppSecret = "587ad4920d1767e10ce7503da86ac1a3";
         String preAuthCode = WeiXinUtils.obtainPreAuthCode(componentAppId, componentAppSecret);
@@ -158,6 +158,10 @@ public class WeiXinController {
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("weiXin/demo");
         modelAndView.addObject("url", url);
+
+        String appId = "wx7f39242a4fd5bf0a";
+        String scope = "snsapi_base";
+        System.out.println(WeiXinUtils.generateAuthorizeUrl(appId, scope, "http://check-local.smartpos.top", null, componentAppId));
         return modelAndView;
     }
 
