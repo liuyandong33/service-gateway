@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -148,8 +149,16 @@ public class WeiXinController {
     }
 
     @RequestMapping(value = "/demo")
-    public String demo() {
-        return "weiXin/demo";
+    public ModelAndView demo() {
+        String componentAppId = "wx3465dea1e67a3131";
+        String componentAppSecret = "587ad4920d1767e10ce7503da86ac1a3";
+        String preAuthCode = WeiXinUtils.obtainPreAuthCode(componentAppId, componentAppSecret);
+        String redirectUri = "http://check-local.smartpos.top";
+        String url = WeiXinUtils.generateComponentLoginPageUrl(componentAppId, preAuthCode, redirectUri, "3");
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("weiXin/demo");
+        modelAndView.addObject("url", url);
+        return modelAndView;
     }
 
     @RequestMapping(value = "/messageCallback/{appId}")

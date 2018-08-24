@@ -11,7 +11,7 @@
     <title>Title</title>
     <script type="text/javascript">
         function login() {
-            window.location.href = "https://mp.weixin.qq.com/cgi-bin/componentloginpage?component_appid=wx3465dea1e67a3131&pre_auth_code=preauthcode@@@P78tjr49QX202y4RHd3tX36ijm1AzI6L_4iHYW9ihWHHXwmQHPiCd8UvlgneJmtD&redirect_uri=http://check-local.smartpos.top&auth_type=3";
+            window.location.href = "${url}";
         }
     </script>
 </head>
