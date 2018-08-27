@@ -1,6 +1,6 @@
 package build.dream.gateway.controllers;
 
-import build.dream.common.beans.WeiXinOAuthAccessToken;
+import build.dream.common.beans.WeiXinOAuthToken;
 import build.dream.common.beans.WeiXinUserInfo;
 import build.dream.common.constants.Constants;
 import build.dream.common.saas.domains.WeiXinOpenPlatformApplication;
@@ -64,18 +64,18 @@ public class WeiXinController {
         WeiXinPublicAccount weiXinPublicAccount = weiXinService.obtainWeiXinPublicAccount(appId);
         ValidateUtils.notNull(weiXinPublicAccount, "微信公众号不存在！");
 
-        WeiXinOAuthAccessToken weiXinOAuthAccessToken = WeiXinUtils.obtainOAuthAccessToken(appId, weiXinPublicAccount.getAppSecret(), code);
+        WeiXinOAuthToken weiXinOAuthToken = WeiXinUtils.obtainOAuthToken(appId, weiXinPublicAccount.getAppSecret(), code);
 
         Map<String, String> parameters = new HashMap<String, String>();
 
-        String openId = weiXinOAuthAccessToken.getOpenId();
+        String openId = weiXinOAuthToken.getOpenId();
         parameters.put("openId", openId);
 
-        String scope = weiXinOAuthAccessToken.getScope();
+        String scope = weiXinOAuthToken.getScope();
         if (Constants.SNSAPI_BASE.equals(scope)) {
 
         } else if (Constants.SNSAPI_USERINFO.equals(scope)) {
-            WeiXinUserInfo weiXinUserInfo = WeiXinUtils.obtainUserInfo(weiXinOAuthAccessToken.getAccessToken(), openId, null);
+            WeiXinUserInfo weiXinUserInfo = WeiXinUtils.obtainUserInfo(weiXinOAuthToken.getAccessToken(), openId, null);
             parameters.put("userInfo", GsonUtils.toJson(weiXinUserInfo));
         }
 

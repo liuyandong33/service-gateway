@@ -9,13 +9,8 @@
 <html>
 <head>
     <title>Title</title>
-    <script type="text/javascript">
-        function login() {
-            window.location.href = "${url}";
-        }
-    </script>
 </head>
 <body>
-<button onclick="login();">登录</button>
+<a href="${url}" target="_blank">登录</a>
 </body>
 </html>
