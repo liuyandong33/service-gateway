@@ -182,7 +182,7 @@ public class WeiXinController {
         String msgType = xmlMap.get("MsgType");
         String event = xmlMap.get("Event");
 
-        KafkaUtils.send("_wei_xin_message_topic_" + msgType + "_" + event, UUID.randomUUID().toString(), GsonUtils.toJson(xmlMap));
+        KafkaUtils.send(Constants.WEI_XIN_MESSAGE_TOPIC_ + "_" + msgType + "_" + event, UUID.randomUUID().toString(), GsonUtils.toJson(xmlMap));
 
         return Constants.SUCCESS;
     }
