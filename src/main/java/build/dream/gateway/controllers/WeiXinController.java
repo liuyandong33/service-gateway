@@ -3,6 +3,8 @@ package build.dream.gateway.controllers;
 import build.dream.common.beans.WeiXinOAuthToken;
 import build.dream.common.beans.WeiXinUserInfo;
 import build.dream.common.constants.Constants;
+import build.dream.common.saas.domains.WeiXinAuthorizerInfo;
+import build.dream.common.saas.domains.WeiXinAuthorizerToken;
 import build.dream.common.saas.domains.WeiXinOpenPlatformApplication;
 import build.dream.common.saas.domains.WeiXinPublicAccount;
 import build.dream.common.utils.*;
@@ -22,6 +24,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -153,7 +156,7 @@ public class WeiXinController {
         String componentAppId = "wx3465dea1e67a3131";
         String componentAppSecret = "587ad4920d1767e10ce7503da86ac1a3";
         String preAuthCode = WeiXinUtils.obtainPreAuthCode(componentAppId, componentAppSecret);
-        String redirectUri = "http://check-local.smartpos.top";
+        String redirectUri = "http://check-local.smartpos.top/portal/tenantWebService/showTenantInfo";
         String url = WeiXinUtils.generateComponentLoginPageUrl(componentAppId, preAuthCode, redirectUri, "3");
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("weiXin/demo");
@@ -161,7 +164,16 @@ public class WeiXinController {
 
         String appId = "wx7f39242a4fd5bf0a";
         String scope = "snsapi_base";
-        System.out.println(WeiXinUtils.generateAuthorizeUrl(appId, scope, "http://check-local.smartpos.top", null, componentAppId));
+        System.out.println(WeiXinUtils.generateAuthorizeUrl(appId, scope, "http://check-local.smartpos.top/portal/tenantWebService/showTenantInfo", null, componentAppId));
+
+        String componentAccessToken = WeiXinUtils.obtainComponentAccessToken(componentAppId, componentAppSecret).getComponentAccessToken();
+        String authorizationCode = ApplicationHandler.getRequestParameter("authorizationCode");
+        WeiXinAuthorizerToken weiXinAuthorizerToken = WeiXinUtils.apiQueryAuth(componentAccessToken, componentAppId, authorizationCode);
+        WeiXinAuthorizerInfo weiXinAuthorizerInfo = WeiXinUtils.apiGetAuthorizerInfo(componentAccessToken, componentAppId, weiXinAuthorizerToken.getAuthorizerAppId());
+        weiXinAuthorizerInfo.setTenantId(BigInteger.TEN);
+        weiXinAuthorizerInfo.setCreateUserId(BigInteger.ONE);
+        weiXinAuthorizerInfo.setLastUpdateUserId(BigInteger.ONE);
+        DatabaseHelper.insert(weiXinAuthorizerInfo);
         return modelAndView;
     }
 
