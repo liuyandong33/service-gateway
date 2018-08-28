@@ -156,25 +156,34 @@ public class WeiXinController {
         String componentAppId = "wx3465dea1e67a3131";
         String componentAppSecret = "587ad4920d1767e10ce7503da86ac1a3";
         String preAuthCode = WeiXinUtils.obtainPreAuthCode(componentAppId, componentAppSecret);
-        String redirectUri = "http://check-local.smartpos.top/portal/tenantWebService/showTenantInfo";
+        String redirectUri = "http://check-local.smartpos.top/zd1/ct2/weiXin/callback?tenantId=100&componentAppId=" + componentAppId;
         String url = WeiXinUtils.generateComponentLoginPageUrl(componentAppId, preAuthCode, redirectUri, "3");
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("weiXin/demo");
         modelAndView.addObject("url", url);
+        return modelAndView;
+    }
 
-        String appId = "wx7f39242a4fd5bf0a";
-        String scope = "snsapi_base";
-        System.out.println(WeiXinUtils.generateAuthorizeUrl(appId, scope, "http://check-local.smartpos.top/portal/tenantWebService/showTenantInfo", null, componentAppId));
+    @RequestMapping(value = "/callback")
+    @ResponseBody
+    public String callback() throws IOException {
+        String tenantId = ApplicationHandler.getRequestParameter("tenantId");
+        String componentAppId = ApplicationHandler.getRequestParameter("componentAppId");
+        String authorizationCode = ApplicationHandler.getRequestParameter("auth_code");
+        SearchModel searchModel = new SearchModel(true);
+        searchModel.addSearchCondition("app_id", Constants.SQL_OPERATION_SYMBOL_EQUAL, componentAppId);
 
+        WeiXinOpenPlatformApplication weiXinOpenPlatformApplication = DatabaseHelper.find(WeiXinOpenPlatformApplication.class, searchModel);
+
+        String componentAppSecret = weiXinOpenPlatformApplication.getAppSecret();
         String componentAccessToken = WeiXinUtils.obtainComponentAccessToken(componentAppId, componentAppSecret).getComponentAccessToken();
-        String authorizationCode = ApplicationHandler.getRequestParameter("authorizationCode");
         WeiXinAuthorizerToken weiXinAuthorizerToken = WeiXinUtils.apiQueryAuth(componentAccessToken, componentAppId, authorizationCode);
         WeiXinAuthorizerInfo weiXinAuthorizerInfo = WeiXinUtils.apiGetAuthorizerInfo(componentAccessToken, componentAppId, weiXinAuthorizerToken.getAuthorizerAppId());
-        weiXinAuthorizerInfo.setTenantId(BigInteger.TEN);
+        weiXinAuthorizerInfo.setTenantId(BigInteger.valueOf(Long.valueOf(tenantId)));
         weiXinAuthorizerInfo.setCreateUserId(BigInteger.ONE);
         weiXinAuthorizerInfo.setLastUpdateUserId(BigInteger.ONE);
         DatabaseHelper.insert(weiXinAuthorizerInfo);
-        return modelAndView;
+        return Constants.SUCCESS;
     }
 
     @RequestMapping(value = "/messageCallback/{appId}")
