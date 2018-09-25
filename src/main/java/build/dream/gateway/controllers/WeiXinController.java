@@ -171,7 +171,7 @@ public class WeiXinController {
         String componentAppId = ApplicationHandler.getRequestParameter("componentAppId");
         String authorizationCode = ApplicationHandler.getRequestParameter("auth_code");
         SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition("app_id", Constants.SQL_OPERATION_SYMBOL_EQUAL, componentAppId);
+        searchModel.addSearchCondition(WeiXinOpenPlatformApplication.ColumnName.APP_ID, Constants.SQL_OPERATION_SYMBOL_EQUAL, componentAppId);
 
         WeiXinOpenPlatformApplication weiXinOpenPlatformApplication = DatabaseHelper.find(WeiXinOpenPlatformApplication.class, searchModel);
 

@@ -13,7 +13,7 @@ public class WeiXinService {
     @Transactional(readOnly = true)
     public WeiXinPublicAccount obtainWeiXinPublicAccount(String appId) {
         SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition("app_id", Constants.SQL_OPERATION_SYMBOL_EQUAL, appId);
+        searchModel.addSearchCondition(WeiXinPublicAccount.ColumnName.APP_ID, Constants.SQL_OPERATION_SYMBOL_EQUAL, appId);
         WeiXinPublicAccount weiXinPublicAccount = DatabaseHelper.find(WeiXinPublicAccount.class, searchModel);
         return weiXinPublicAccount;
     }
@@ -21,7 +21,7 @@ public class WeiXinService {
     @Transactional(readOnly = true)
     public WeiXinOpenPlatformApplication obtainWeiXinOpenPlatformApplication(String appId) {
         SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition("app_id", Constants.SQL_OPERATION_SYMBOL_EQUAL, appId);
+        searchModel.addSearchCondition(WeiXinOpenPlatformApplication.ColumnName.APP_ID, Constants.SQL_OPERATION_SYMBOL_EQUAL, appId);
         WeiXinOpenPlatformApplication weiXinOpenPlatformApplication = DatabaseHelper.find(WeiXinOpenPlatformApplication.class, searchModel);
         return weiXinOpenPlatformApplication;
     }

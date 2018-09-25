@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.concurrent.ListenableFuture;
 import scala.Tuple2;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ElemeService {
     @Transactional(readOnly = true)
-    public String handleElemeCallback(String callbackRequestBody) throws IOException, ExecutionException, InterruptedException {
+    public String handleElemeCallback(String callbackRequestBody) throws ExecutionException, InterruptedException {
         JSONObject callbackRequestBodyJsonObject = JSONObject.fromObject(callbackRequestBody);
         Validate.isTrue(ElemeUtils.checkSignature(callbackRequestBodyJsonObject, ConfigurationUtils.getConfiguration(Constants.ELEME_APP_SECRET)), "签名校验未通过！");
 
@@ -41,7 +40,7 @@ public class ElemeService {
         return handleResult;
     }
 
-    private String handleElemeCallback(String key, String uuid, JSONObject callbackRequestBodyJsonObject) throws IOException, ExecutionException, InterruptedException {
+    private String handleElemeCallback(String key, String uuid, JSONObject callbackRequestBodyJsonObject) throws ExecutionException, InterruptedException {
         String handleResult = null;
         try {
             CacheUtils.expire(key, 1800, TimeUnit.SECONDS);

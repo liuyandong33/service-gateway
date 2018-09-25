@@ -10,10 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,10 +21,10 @@ public class NotifyService {
     private RestTemplate restTemplate;
 
     @Transactional(rollbackFor = Exception.class)
-    public void handleAlipayCallback(Map<String, String> callbackParameters) throws NoSuchAlgorithmException, SignatureException, InvalidKeySpecException, InvalidKeyException, IOException {
+    public void handleAlipayCallback(Map<String, String> callbackParameters) throws IOException {
         String outTradeNo = callbackParameters.get("out_trade_no");
         SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition("uuid", Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
+        searchModel.addSearchCondition(NotifyRecord.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
         NotifyRecord notifyRecord = DatabaseHelper.find(NotifyRecord.class, searchModel);
         ValidateUtils.notNull(notifyRecord, "通知记录不存在！");
 
@@ -53,7 +49,7 @@ public class NotifyService {
     public void handleWeiXinPayCallback(Map<String, String> callbackParameters) {
         String outTradeNo = callbackParameters.get("out_trade_no");
         SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition("uuid", Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
+        searchModel.addSearchCondition(NotifyRecord.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
         NotifyRecord notifyRecord = DatabaseHelper.find(NotifyRecord.class, searchModel);
         ValidateUtils.notNull(notifyRecord, "通知记录不存在！");
 
@@ -85,13 +81,13 @@ public class NotifyService {
     @Transactional(readOnly = true)
     public List<NotifyRecord> obtainAllNotifyRecords() {
         SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition("notify_result", Constants.SQL_OPERATION_SYMBOL_EQUAL, 3);
+        searchModel.addSearchCondition(NotifyRecord.ColumnName.NOTIFY_RESULT, Constants.SQL_OPERATION_SYMBOL_EQUAL, 3);
         List<NotifyRecord> notifyRecords = DatabaseHelper.findAll(NotifyRecord.class, searchModel);
         return notifyRecords;
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void executeNotify(NotifyRecord notifyRecord) throws IOException {
+    public void executeNotify(NotifyRecord notifyRecord) {
         Map<String, String> callbackParameters = JacksonUtils.readValueAsMap(notifyRecord.getExternalSystemNotifyRequestBody(), String.class, String.class);
         String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildHttpEntity(callbackParameters), String.class);
         if (Constants.SUCCESS.equals(callbackResult)) {

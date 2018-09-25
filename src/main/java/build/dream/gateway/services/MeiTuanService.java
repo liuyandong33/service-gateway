@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.concurrent.ListenableFuture;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class MeiTuanService {
     @Transactional(readOnly = true)
-    public String handleCallback(Map<String, String> callbackParameters, Integer type) throws IOException, ExecutionException, InterruptedException {
+    public String handleCallback(Map<String, String> callbackParameters, Integer type) throws ExecutionException, InterruptedException {
         String uuid = DigestUtils.md5Hex(GsonUtils.toJson(callbackParameters));
         boolean setnxSuccessful = CacheUtils.setnx(uuid, uuid);
         String handleResult = null;
@@ -35,7 +34,7 @@ public class MeiTuanService {
         return handleResult;
     }
 
-    public String handleCallback(String uuid, Map<String, String> callbackParameters, Integer type) throws IOException, ExecutionException, InterruptedException {
+    public String handleCallback(String uuid, Map<String, String> callbackParameters, Integer type) throws ExecutionException, InterruptedException {
         String handleResult = null;
         try {
             CacheUtils.expire(uuid, 1800, TimeUnit.SECONDS);
@@ -46,7 +45,7 @@ public class MeiTuanService {
             String[] tenantIdAndBranchIdArray = ePoiId.split("Z");
             BigInteger tenantId = NumberUtils.createBigInteger(tenantIdAndBranchIdArray[0]);
             SearchModel searchModel = new SearchModel(true);
-            searchModel.addSearchCondition("id", Constants.SQL_OPERATION_SYMBOL_EQUAL, tenantId);
+            searchModel.addSearchCondition(Tenant.ColumnName.ID, Constants.SQL_OPERATION_SYMBOL_EQUAL, tenantId);
             Tenant tenant = DatabaseHelper.find(Tenant.class, searchModel);
 
             if (tenant == null) {
