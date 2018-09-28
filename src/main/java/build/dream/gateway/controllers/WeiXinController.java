@@ -201,10 +201,8 @@ public class WeiXinController {
 
         String message = decrypt(requestBody, encodingAesKey);
         Map<String, String> xmlMap = XmlUtils.xmlStringToMap(message);
-        String msgType = xmlMap.get("MsgType");
-        String event = xmlMap.get("Event");
 
-        KafkaUtils.send(Constants.WEI_XIN_MESSAGE_TOPIC_ + "_" + msgType + "_" + event, UUID.randomUUID().toString(), GsonUtils.toJson(xmlMap));
+        KafkaUtils.send(Constants.WEI_XIN_MESSAGE_TOPIC, UUID.randomUUID().toString(), GsonUtils.toJson(xmlMap));
 
         return Constants.SUCCESS;
     }
