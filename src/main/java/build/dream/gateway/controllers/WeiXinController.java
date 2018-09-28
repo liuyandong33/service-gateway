@@ -13,6 +13,9 @@ import build.dream.gateway.services.WeiXinService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.api.GetChildrenBuilder;
+import org.apache.curator.framework.api.GetDataBuilder;
 import org.dom4j.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -26,10 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Controller
 @RequestMapping(value = "/weiXin")
@@ -251,6 +251,31 @@ public class WeiXinController {
                 returnValue = Constants.SUCCESS;
             }
         }
+
         return returnValue;
+    }
+
+    @Autowired
+    private CuratorFramework curatorFramework;
+
+    @RequestMapping(value = "/test")
+    @ResponseBody
+    public String test() throws Exception {
+        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
+        String deploymentEnvironment = requestParameters.get("deploymentEnvironment");
+        String partitionCode = requestParameters.get("partitionCode");
+        String serviceName = requestParameters.get("serviceName");
+        String applicationName = deploymentEnvironment + (StringUtils.isNotBlank(partitionCode) ? "-" + partitionCode : "") + "-" + serviceName;
+        String path = "/applications/" + applicationName;
+        GetChildrenBuilder getChildrenBuilder = curatorFramework.getChildren();
+
+
+        GetDataBuilder getDataBuilder = curatorFramework.getData();
+        Map<String, String> configurations = new HashMap<String, String>();
+        List<String> keys = getChildrenBuilder.forPath(path);
+        for (String key : keys) {
+            configurations.put(key, new String(getDataBuilder.forPath(path + "/" + key)));
+        }
+        return GsonUtils.toJson(configurations);
     }
 }
