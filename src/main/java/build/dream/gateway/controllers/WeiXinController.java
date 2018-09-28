@@ -13,7 +13,6 @@ import build.dream.gateway.services.WeiXinService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.RandomUtils;
 import org.dom4j.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -234,29 +233,21 @@ public class WeiXinController {
             String msgType = bodyMap.get("MsgType");
             String event = bodyMap.get("Event");
             if ("event".equals(msgType) && "subscribe".equals(event)) {
-                Map<String, String> map = new HashMap<String, String>();
-                String openId = bodyMap.get("FromUserName");
-                String originalId = bodyMap.get("ToUserName");
-                map.put("ToUserName", openId);
-                map.put("FromUserName", originalId);
-                map.put("CreateTime", String.valueOf(System.currentTimeMillis()));
-                map.put("MsgType", "text");
-                map.put("Content", UUID.randomUUID().toString());
-                map.put("MsgId", String.valueOf(RandomUtils.nextLong()));
-                returnValue = mapToXml(map);
+                returnValue = Constants.SUCCESS;
 
+                String openId = bodyMap.get("FromUserName");
                 new Thread(() -> {
                     ThreadUtils.sleepSafe(2000);
 
                     Map<String, Object> messageBody = new HashMap<String, Object>();
                     messageBody.put("touser", openId);
-                    messageBody.put("msgtype", "wxcard");
+                    messageBody.put("msgtype", "text");
 
-                    Map<String, Object> wxcard = new HashMap<String, Object>();
-                    wxcard.put("card_id", "pmR87t_G_4SU5tehB5ZZsaFA7Fe8");
-                    messageBody.put("wxcard", wxcard);
+                    Map<String, Object> text = new HashMap<String, Object>();
+                    text.put("content", UUID.randomUUID().toString());
+                    messageBody.put("text", text);
 
-                    WeiXinUtils.sendCustomMessage("wx6bb9ea76a4242455", "dbceac55f21809dc0f7cbbac99c4eca6", GsonUtils.toJson(messageBody));
+                    WeiXinUtils.sendCustomMessage("wx7f39242a4fd5bf0a", "dc3ba603115c02c8704cdeebb616bbfa", GsonUtils.toJson(messageBody));
                 }).start();
             } else {
                 returnValue = Constants.SUCCESS;
