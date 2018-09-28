@@ -11,7 +11,9 @@ import build.dream.common.utils.*;
 import build.dream.gateway.models.weixin.ObtainUserInfoModel;
 import build.dream.gateway.services.WeiXinService;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.dom4j.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -25,10 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Controller
 @RequestMapping(value = "/weiXin")
@@ -206,5 +205,112 @@ public class WeiXinController {
         KafkaUtils.send(Constants.WEI_XIN_MESSAGE_TOPIC_ + "_" + msgType + "_" + event, UUID.randomUUID().toString(), GsonUtils.toJson(xmlMap));
 
         return Constants.SUCCESS;
+    }
+
+    @RequestMapping(value = "/coreReceive")
+    @ResponseBody
+    public String coreReceive(HttpServletRequest httpServletRequest) throws IOException, DocumentException {
+        String method = httpServletRequest.getMethod();
+        String returnValue = null;
+        if ("GET".equals(method)) {
+            Map<String, String> requestParameters = ApplicationHandler.getRequestParameters(httpServletRequest);
+            String timestamp = requestParameters.get("timestamp");
+            String nonce = requestParameters.get("nonce");
+            String token = "DearFangXiang";
+
+            String[] array = {token, timestamp, nonce};
+            Arrays.sort(array);
+
+            String signature = requestParameters.get("signature");
+            ValidateUtils.isTrue(signature.equals(DigestUtils.sha1Hex(StringUtils.join(array, ""))), "签名验证未通过！");
+
+            returnValue = requestParameters.get("echostr");
+        } else {
+            String requestBody = IOUtils.toString(httpServletRequest.getInputStream());
+            Map<String, String> bodyMap = XmlUtils.xmlStringToMap(requestBody);
+            String msgType = bodyMap.get("MsgType");
+            String event = bodyMap.get("Event");
+            if ("event".equals(msgType) && "subscribe".equals(event)) {
+                Map<String, String> map = new HashMap<String, String>();
+                String openId = bodyMap.get("FromUserName");
+                String originalId = bodyMap.get("ToUserName");
+                map.put("ToUserName", openId);
+                map.put("FromUserName", originalId);
+                map.put("CreateTime", String.valueOf(System.currentTimeMillis()));
+                map.put("MsgType", "text");
+                map.put("Content", UUID.randomUUID().toString());
+                map.put("MsgId", String.valueOf(RandomUtils.nextLong()));
+                returnValue = mapToXml(map);
+
+                new Thread(() -> {
+                    ThreadUtils.sleepSafe(2000);
+
+                    Map<String, Object> messageBody = new HashMap<String, Object>();
+                    messageBody.put("touser", openId);
+                    messageBody.put("msgtype", "wxcard");
+
+                    Map<String, Object> wxcard = new HashMap<String, Object>();
+                    wxcard.put("card_id", "pmR87t_G_4SU5tehB5ZZsaFA7Fe8");
+                    messageBody.put("wxcard", wxcard);
+
+                    WeiXinUtils.sendCustomMessage("wx6bb9ea76a4242455", "dbceac55f21809dc0f7cbbac99c4eca6", GsonUtils.toJson(messageBody));
+                }).start();
+            } else {
+                returnValue = Constants.SUCCESS;
+            }
+        }
+        return returnValue;
+    }
+
+    public String mapToXml(Map<String, String> map) {
+        StringBuilder xml = new StringBuilder("<xml>");
+
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            String key = entry.getKey();
+
+            xml.append("<").append(key).append(">");
+
+            xml.append(String.format(Constants.CDATA_FORMAT, entry.getValue()));
+
+            xml.append("</").append(key).append(">");
+        }
+
+        xml.append("</xml>");
+        return xml.toString();
+    }
+
+    @RequestMapping(value = "/getUser")
+    @ResponseBody
+    public String getUser() {
+        String appId = "wx6bb9ea76a4242455";
+        String secret = "dbceac55f21809dc0f7cbbac99c4eca6";
+        Map<String, Object> result = WeiXinUtils.getUser(appId, secret, ApplicationHandler.getRequestParameter("nextOpenId"));
+        return GsonUtils.toJson(result);
+    }
+
+    @RequestMapping(value = "/getUserInfo")
+    @ResponseBody
+    public String getUserInfo() {
+        String appId = "wx6bb9ea76a4242455";
+        String secret = "dbceac55f21809dc0f7cbbac99c4eca6";
+        Map<String, Object> result = WeiXinUtils.getUserInfo(appId, secret, ApplicationHandler.getRequestParameter("openId"), null);
+        return GsonUtils.toJson(result);
+    }
+
+    @RequestMapping(value = "/batchGetUserInfo")
+    @ResponseBody
+    public String batchGetUserInfo() {
+        String appId = "wx6bb9ea76a4242455";
+        String secret = "dbceac55f21809dc0f7cbbac99c4eca6";
+        String[] openIds = ApplicationHandler.getRequestParameter("openIds").split(",");
+        List<Map<String, String>> userList = new ArrayList<Map<String, String>>();
+        for (String openId : openIds) {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("openid", openId);
+            map.put("lang", "zh_CN");
+            userList.add(map);
+        }
+        Map<String, Object> result = WeiXinUtils.batchGetUserInfo(appId, secret, GsonUtils.toJson(userList));
+        return GsonUtils.toJson(result);
     }
 }
