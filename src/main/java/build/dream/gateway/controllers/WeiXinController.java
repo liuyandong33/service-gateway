@@ -27,7 +27,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping(value = "/weiXin")
@@ -264,53 +267,13 @@ public class WeiXinController {
 
     public String mapToXml(Map<String, String> map) {
         StringBuilder xml = new StringBuilder("<xml>");
-
         for (Map.Entry<String, String> entry : map.entrySet()) {
             String key = entry.getKey();
-
             xml.append("<").append(key).append(">");
-
             xml.append(String.format(Constants.CDATA_FORMAT, entry.getValue()));
-
             xml.append("</").append(key).append(">");
         }
-
         xml.append("</xml>");
         return xml.toString();
-    }
-
-    @RequestMapping(value = "/getUser")
-    @ResponseBody
-    public String getUser() {
-        String appId = "wx6bb9ea76a4242455";
-        String secret = "dbceac55f21809dc0f7cbbac99c4eca6";
-        Map<String, Object> result = WeiXinUtils.getUser(appId, secret, ApplicationHandler.getRequestParameter("nextOpenId"));
-        return GsonUtils.toJson(result);
-    }
-
-    @RequestMapping(value = "/getUserInfo")
-    @ResponseBody
-    public String getUserInfo() {
-        String appId = "wx6bb9ea76a4242455";
-        String secret = "dbceac55f21809dc0f7cbbac99c4eca6";
-        Map<String, Object> result = WeiXinUtils.getUserInfo(appId, secret, ApplicationHandler.getRequestParameter("openId"), null);
-        return GsonUtils.toJson(result);
-    }
-
-    @RequestMapping(value = "/batchGetUserInfo")
-    @ResponseBody
-    public String batchGetUserInfo() {
-        String appId = "wx6bb9ea76a4242455";
-        String secret = "dbceac55f21809dc0f7cbbac99c4eca6";
-        String[] openIds = ApplicationHandler.getRequestParameter("openIds").split(",");
-        List<Map<String, String>> userList = new ArrayList<Map<String, String>>();
-        for (String openId : openIds) {
-            Map<String, String> map = new HashMap<String, String>();
-            map.put("openid", openId);
-            map.put("lang", "zh_CN");
-            userList.add(map);
-        }
-        Map<String, Object> result = WeiXinUtils.batchGetUserInfo(appId, secret, GsonUtils.toJson(userList));
-        return GsonUtils.toJson(result);
     }
 }
