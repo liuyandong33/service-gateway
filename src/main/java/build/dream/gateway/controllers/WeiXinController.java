@@ -253,16 +253,4 @@ public class WeiXinController {
         }
         return returnValue;
     }
-
-    public String mapToXml(Map<String, String> map) {
-        StringBuilder xml = new StringBuilder("<xml>");
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            String key = entry.getKey();
-            xml.append("<").append(key).append(">");
-            xml.append(String.format(Constants.CDATA_FORMAT, entry.getValue()));
-            xml.append("</").append(key).append(">");
-        }
-        xml.append("</xml>");
-        return xml.toString();
-    }
 }
