@@ -1,5 +1,7 @@
 package build.dream.gateway.controllers;
 
+import build.dream.common.beans.WebResponse;
+import build.dream.common.beans.WeiXinAccessToken;
 import build.dream.common.beans.WeiXinOAuthToken;
 import build.dream.common.beans.WeiXinUserInfo;
 import build.dream.common.constants.Constants;
@@ -10,12 +12,11 @@ import build.dream.common.saas.domains.WeiXinPublicAccount;
 import build.dream.common.utils.*;
 import build.dream.gateway.models.weixin.ObtainUserInfoModel;
 import build.dream.gateway.services.WeiXinService;
+import net.sf.json.JSONObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.GetChildrenBuilder;
-import org.apache.curator.framework.api.GetDataBuilder;
 import org.dom4j.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -29,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Controller
@@ -255,27 +257,78 @@ public class WeiXinController {
         return returnValue;
     }
 
-    @Autowired
-    private CuratorFramework curatorFramework;
-
     @RequestMapping(value = "/test")
     @ResponseBody
-    public String test() throws Exception {
+    public String test() throws IOException {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
-        String deploymentEnvironment = requestParameters.get("deploymentEnvironment");
-        String partitionCode = requestParameters.get("partitionCode");
-        String serviceName = requestParameters.get("serviceName");
-        String applicationName = deploymentEnvironment + (StringUtils.isNotBlank(partitionCode) ? "-" + partitionCode : "") + "-" + serviceName;
-        String path = "/applications/" + applicationName;
-        GetChildrenBuilder getChildrenBuilder = curatorFramework.getChildren();
+        String openId = requestParameters.get("openId");
+        List<Map<String, Object>> articles = new ArrayList<Map<String, Object>>();
+        Map<String, Object> article = new HashMap<String, Object>();
+        article.put("title", "消费通知");
+        StringBuilder description = new StringBuilder("您的交易已支付成功\n");
+        description.append("消费时间：").append(new SimpleDateFormat(Constants.DEFAULT_DATE_PATTERN).format(new Date())).append("\n");
+        description.append("消费金额：").append("￥0.01元\n");
+        description.append("优惠金额：").append("￥0.00元\n");
+        description.append("实付金额：").append("￥0.01元\n");
+        description.append("交易单号：").append("WX11211810080002");
 
+        article.put("description", description.toString());
+        article.put("url", "https://www.baidu.com");
+        article.put("picurl", "http://image.smartpos.top/img/errorPage.png");
+        articles.add(article);
 
-        GetDataBuilder getDataBuilder = curatorFramework.getData();
-        Map<String, String> configurations = new HashMap<String, String>();
-        List<String> keys = getChildrenBuilder.forPath(path);
-        for (String key : keys) {
-            configurations.put(key, new String(getDataBuilder.forPath(path + "/" + key)));
+        Map<String, Object> news = new HashMap<String, Object>();
+        news.put("articles", articles);
+
+        Map<String, Object> messageBody = new HashMap<String, Object>();
+        messageBody.put("touser", openId);
+        messageBody.put("msgtype", "news");
+        messageBody.put("news", news);
+        Map<String, Object> result = sendCustomMessage("wx6bb9ea76a4242455", "dbceac55f21809dc0f7cbbac99c4eca6", GsonUtils.toJson(messageBody));
+        return Constants.SUCCESS;
+    }
+
+    public static WeiXinAccessToken obtainAccessToken(String appId, String secret) throws IOException {
+        String weiXinAccessTokenJson = CacheUtils.hget(Constants.KEY_WEI_XIN_ACCESS_TOKENS, appId);
+        boolean isRetrieveAccessToken = false;
+        WeiXinAccessToken weiXinAccessToken = null;
+        if (StringUtils.isNotBlank(weiXinAccessTokenJson)) {
+            weiXinAccessToken = GsonUtils.fromJson(weiXinAccessTokenJson, WeiXinAccessToken.class);
+            if ((System.currentTimeMillis() - weiXinAccessToken.getFetchTime().getTime()) / 1000 >= weiXinAccessToken.getExpiresIn()) {
+                isRetrieveAccessToken = true;
+            }
+        } else {
+            isRetrieveAccessToken = true;
         }
-        return GsonUtils.toJson(configurations);
+        if (isRetrieveAccessToken) {
+            Map<String, String> obtainAccessTokenRequestParameters = new HashMap<String, String>();
+            obtainAccessTokenRequestParameters.put("appid", appId);
+            obtainAccessTokenRequestParameters.put("secret", secret);
+            obtainAccessTokenRequestParameters.put("grant_type", "client_credential");
+            String url = "https://api.weixin.qq.com/cgi-bin/token";
+            WebResponse webResponse = WebUtils.doGetWithRequestParameters(url, obtainAccessTokenRequestParameters);
+
+            JSONObject resultJsonObject = JSONObject.fromObject(webResponse.getResult());
+            ValidateUtils.isTrue(!resultJsonObject.has("errcode"), resultJsonObject.optString("errmsg"));
+
+            weiXinAccessToken = new WeiXinAccessToken();
+            weiXinAccessToken.setAccessToken(resultJsonObject.getString("access_token"));
+            weiXinAccessToken.setExpiresIn(resultJsonObject.getInt("expires_in"));
+            weiXinAccessToken.setFetchTime(new Date());
+            CacheUtils.hset(Constants.KEY_WEI_XIN_ACCESS_TOKENS, appId, GsonUtils.toJson(weiXinAccessToken));
+        }
+        return weiXinAccessToken;
+    }
+
+    public static Map<String, Object> sendCustomMessage(String appId, String secret, String message) throws IOException {
+        WeiXinAccessToken weiXinAccessToken = obtainAccessToken(appId, secret);
+        String accessToken = weiXinAccessToken.getAccessToken();
+        String url = "https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=" + accessToken;
+        WebResponse webResponse = WebUtils.doPostWithRequestBody(url, message);
+        String result = webResponse.getResult();
+        Map<String, Object> resultMap = JacksonUtils.readValueAsMap(result, String.class, Object.class);
+        int errcode = MapUtils.getIntValue(resultMap, "errcode");
+        ValidateUtils.isTrue(errcode == 0, MapUtils.getString(resultMap, "errmsg"));
+        return resultMap;
     }
 }
