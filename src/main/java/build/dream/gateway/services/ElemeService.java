@@ -13,7 +13,6 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.concurrent.ListenableFuture;
-import scala.Tuple2;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -46,7 +45,7 @@ public class ElemeService {
             CacheUtils.expire(key, 1800, TimeUnit.SECONDS);
             BigInteger shopId = BigInteger.valueOf(callbackRequestBodyJsonObject.getLong("shopId"));
 
-            Map<String, Object> tenantInfo = DatabaseHelper.callMapperMethod(TenantMapper.class, "obtainTenantInfo", new Tuple2<Class<?>, Object>(BigInteger.class, shopId));
+            Map<String, Object> tenantInfo = DatabaseHelper.callMapperMethod(TenantMapper.class, "obtainTenantInfo", TupleUtils.buildTuple2(BigInteger.class, shopId));
             if (MapUtils.isEmpty(tenantInfo)) {
                 handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             } else {
