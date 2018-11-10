@@ -1,5 +1,6 @@
 package build.dream.gateway.services;
 
+import build.dream.common.saas.domains.Tenant;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.mappers.TenantMapper;
@@ -49,7 +50,7 @@ public class ElemeService {
             if (MapUtils.isEmpty(tenantInfo)) {
                 handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             } else {
-                String partitionCode = MapUtils.getString(tenantInfo, "partitionCode");
+                String partitionCode = MapUtils.getString(tenantInfo, Tenant.FieldName.PARTITION_CODE);
                 Map<String, Object> elemeMessage = new HashMap<String, Object>();
                 elemeMessage.put("uuid", uuid);
                 elemeMessage.put("callbackRequestBody", callbackRequestBodyJsonObject);
