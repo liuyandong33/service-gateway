@@ -54,5 +54,4 @@ dependencies {
 
     compile("org.apache.tomcat.embed:tomcat-embed-jasper")
     compile("org.springframework.boot:spring-boot-starter-amqp")
-    compile("org.springframework.boot:spring-boot-starter-activemq")
 }

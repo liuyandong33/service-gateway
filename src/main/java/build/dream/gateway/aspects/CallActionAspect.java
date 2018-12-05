@@ -3,7 +3,10 @@ package build.dream.gateway.aspects;
 import build.dream.common.annotations.ApiRestAction;
 import build.dream.common.annotations.ModelAndViewAction;
 import build.dream.common.api.ApiRest;
+import build.dream.common.constants.Constants;
 import build.dream.common.exceptions.ApiException;
+import build.dream.common.exceptions.CustomException;
+import build.dream.common.exceptions.Error;
 import build.dream.common.models.BasicModel;
 import build.dream.common.utils.ApplicationHandler;
 import build.dream.common.utils.GsonUtils;
@@ -53,9 +56,10 @@ public class CallActionAspect {
         if (throwable != null) {
             LogUtils.error(apiRestAction.error(), proceedingJoinPoint.getTarget().getClass().getName(), proceedingJoinPoint.getSignature().getName(), throwable, requestParameters);
             if (throwable instanceof ApiException) {
-                returnValue = GsonUtils.toJson(new ApiRest(throwable));
+                CustomException customException = (CustomException) throwable;
+                returnValue = GsonUtils.toJson(ApiRest.builder().error(new Error(customException.getCode(), customException.getMessage())).build());
             } else {
-                returnValue = GsonUtils.toJson(new ApiRest(apiRestAction.error()));
+                returnValue = GsonUtils.toJson(ApiRest.builder().error(new Error(Constants.ERROR_CODE_UNKNOWN_ERROR, apiRestAction.error())).build());
             }
         }
         return returnValue;

@@ -4,7 +4,6 @@ import build.dream.common.controllers.BasicController;
 import build.dream.common.utils.ApplicationHandler;
 import build.dream.common.utils.IOUtils;
 import build.dream.common.utils.LogUtils;
-import build.dream.common.utils.WebUtils;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.services.ElemeService;
 import org.apache.commons.lang.Validate;
@@ -28,9 +27,9 @@ public class ElemeController extends BasicController {
         try {
             HttpServletRequest httpServletRequest = ApplicationHandler.getHttpServletRequest();
             String method = httpServletRequest.getMethod();
-            if (WebUtils.RequestMethod.GET.equals(method)) {
+            if (Constants.REQUEST_METHOD_GET.equals(method)) {
                 returnValue = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
-            } else if (WebUtils.RequestMethod.POST.equals(method)) {
+            } else if (Constants.REQUEST_METHOD_POST.equals(method)) {
                 String callbackRequestBody = IOUtils.toString(httpServletRequest.getInputStream());
                 Validate.notNull(callbackRequestBody, "回调请求体不能为空！");
                 returnValue = elemeService.handleElemeCallback(callbackRequestBody);
