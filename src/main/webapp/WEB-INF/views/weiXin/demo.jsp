@@ -11,6 +11,6 @@
     <title>Title</title>
 </head>
 <body>
-<a href="${url}" target="_blank">登录</a>
+<a href="${url}" target="_blank">授权</a>
 </body>
 </html>
