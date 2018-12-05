@@ -8,9 +8,7 @@ import build.dream.common.exceptions.ApiException;
 import build.dream.common.exceptions.CustomException;
 import build.dream.common.exceptions.Error;
 import build.dream.common.models.BasicModel;
-import build.dream.common.utils.ApplicationHandler;
-import build.dream.common.utils.GsonUtils;
-import build.dream.common.utils.LogUtils;
+import build.dream.common.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -20,6 +18,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -41,12 +40,13 @@ public class CallActionAspect {
 
     @Around(value = "execution(public * build.dream.gateway.controllers.*.*(..)) && @annotation(apiRestAction)")
     public Object callApiRestAction(ProceedingJoinPoint proceedingJoinPoint, ApiRestAction apiRestAction) {
-        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
-        Object returnValue = null;
+        HttpServletRequest httpServletRequest = ApplicationHandler.getHttpServletRequest();
+        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters(httpServletRequest);
+        ApiRest apiRest = null;
 
         Throwable throwable = null;
         try {
-            returnValue = callAction(proceedingJoinPoint, requestParameters, apiRestAction.modelClass(), apiRestAction.serviceClass(), apiRestAction.serviceMethodName());
+            apiRest = callApiRestAction(proceedingJoinPoint, requestParameters, apiRestAction.modelClass(), apiRestAction.serviceClass(), apiRestAction.serviceMethodName());
         } catch (InvocationTargetException e) {
             throwable = e.getTargetException();
         } catch (Throwable t) {
@@ -55,14 +55,45 @@ public class CallActionAspect {
 
         if (throwable != null) {
             LogUtils.error(apiRestAction.error(), proceedingJoinPoint.getTarget().getClass().getName(), proceedingJoinPoint.getSignature().getName(), throwable, requestParameters);
-            if (throwable instanceof ApiException) {
+            if (throwable instanceof CustomException) {
                 CustomException customException = (CustomException) throwable;
-                returnValue = GsonUtils.toJson(ApiRest.builder().error(new Error(customException.getCode(), customException.getMessage())).build());
+                apiRest = ApiRest.builder().error(new Error(customException.getCode(), customException.getMessage())).build();
             } else {
-                returnValue = GsonUtils.toJson(ApiRest.builder().error(new Error(Constants.ERROR_CODE_UNKNOWN_ERROR, apiRestAction.error())).build());
+                apiRest = ApiRest.builder().error(new Error(Constants.ERROR_CODE_UNKNOWN_ERROR, apiRestAction.error())).build();
             }
         }
+
+        String datePattern = apiRestAction.datePattern();
+
+        if (apiRestAction.zipped()) {
+            apiRest.zipData(datePattern);
+        }
+
+        if (apiRestAction.encrypted()) {
+            String publicKey = TenantUtils.obtainPublicKey();
+            apiRest.encryptData(publicKey, datePattern);
+        }
+
+        if (apiRestAction.signed()) {
+            String platformPrivateKey = ConfigurationUtils.getConfiguration(Constants.PLATFORM_PRIVATE_KEY);
+            apiRest.sign(platformPrivateKey, datePattern);
+        }
+
+        String returnValue = GsonUtils.toJson(apiRest, datePattern);
+
+        httpServletRequest.setAttribute(Constants.RESPONSE_CONTENT, returnValue);
         return returnValue;
+    }
+
+    private ApiRest callApiRestAction(ProceedingJoinPoint proceedingJoinPoint, Map<String, String> requestParameters, Class<? extends BasicModel> modelClass, Class<?> serviceClass, String serviceMethodName) throws Throwable {
+        Object returnValue = callAction(proceedingJoinPoint, requestParameters, modelClass, serviceClass, serviceMethodName);
+        ApiRest apiRest = null;
+        if (returnValue instanceof String) {
+            apiRest = ApiRest.fromJson(returnValue.toString());
+        } else {
+            apiRest = (ApiRest) returnValue;
+        }
+        return apiRest;
     }
 
     @Around(value = "execution(public * build.dream.gateway.controllers.*.*(..)) && @annotation(modelAndViewAction)")
@@ -91,7 +122,7 @@ public class CallActionAspect {
         return modelAndView;
     }
 
-    public Object callAction(ProceedingJoinPoint proceedingJoinPoint, Map<String, String> requestParameters, Class<? extends BasicModel> modelClass, Class<?> serviceClass, String serviceMethodName) throws Throwable {
+    private Object callAction(ProceedingJoinPoint proceedingJoinPoint, Map<String, String> requestParameters, Class<? extends BasicModel> modelClass, Class<?> serviceClass, String serviceMethodName) throws Throwable {
         Object returnValue = null;
         if (modelClass != BasicModel.class && serviceClass != Object.class && StringUtils.isNotBlank(serviceMethodName)) {
             BasicModel model = ApplicationHandler.instantiateObject(modelClass, requestParameters);
@@ -101,9 +132,6 @@ public class CallActionAspect {
             method.setAccessible(true);
 
             returnValue = method.invoke(obtainService(serviceClass), model);
-            if (!(returnValue instanceof String)) {
-                returnValue = GsonUtils.toJson(returnValue);
-            }
         } else {
             returnValue = proceedingJoinPoint.proceed();
         }
