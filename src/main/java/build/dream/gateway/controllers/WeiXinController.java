@@ -192,7 +192,7 @@ public class WeiXinController {
         String toUserName = xmlMap.get("ToUserName");
 
         String returnValue = null;
-        if (WEI_XIN_AUTOMATED_TESTING_MINI_PROGRAM_APP_ID.equals(appId) || WEI_XIN_AUTOMATED_TESTING_MINI_PROGRAM_APP_ID.equals(appId)) {
+        if (WEI_XIN_AUTOMATED_TESTING_PUBLIC_ACCOUNT_APP_ID.equals(appId) || WEI_XIN_AUTOMATED_TESTING_MINI_PROGRAM_APP_ID.equals(appId)) {
             String content = xmlMap.get("Content");
             String nonce = requestParameters.get("nonce");
             if ("TESTCOMPONENT_MSG_TYPE_TEXT".equals(content)) {
