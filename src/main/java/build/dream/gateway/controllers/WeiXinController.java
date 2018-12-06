@@ -120,8 +120,18 @@ public class WeiXinController {
 
         ValidateUtils.isTrue(appId.equals(encryptMap.get("AppId")), "消息内容非法！");
 
-        String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
-        CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKET, appId, componentVerifyTicket);
+        String infoType = encryptMap.get("InfoType");
+        if ("component_verify_ticket".equals(infoType)) {
+            String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
+            CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKET, appId, componentVerifyTicket);
+        } else if ("authorized".equals(infoType)) {
+
+        } else if ("unauthorized".equals(infoType)) {
+
+        } else if ("updateauthorized".equals(infoType)) {
+
+        }
+
         return Constants.SUCCESS;
     }
 
@@ -181,11 +191,11 @@ public class WeiXinController {
         Map<String, String> xmlMap = XmlUtils.xmlStringToMap(message);
         String fromUserName = xmlMap.get("FromUserName");
         String toUserName = xmlMap.get("ToUserName");
-        String nonce = requestParameters.get("nonce");
 
         String returnValue = null;
         if (WEI_XIN_AUTOMATED_TESTING_MINI_PROGRAM_APP_ID.equals(appId) || WEI_XIN_AUTOMATED_TESTING_MINI_PROGRAM_APP_ID.equals(appId)) {
             String content = xmlMap.get("Content");
+            String nonce = requestParameters.get("nonce");
             if ("TESTCOMPONENT_MSG_TYPE_TEXT".equals(content)) {
                 String timeStamp = String.valueOf(System.currentTimeMillis() / 1000);
                 Map<String, String> map = new HashMap<String, String>();
@@ -200,7 +210,7 @@ public class WeiXinController {
                 String[] array = new String[]{token, timeStamp, nonce, encryptedData};
                 Arrays.sort(array);
 
-                String msgSignature = DigestUtils.shaHex(StringUtils.join(array, ""));
+                String msgSignature = DigestUtils.sha1Hex(StringUtils.join(array, ""));
 
                 Map<String, String> encryptMap = new HashMap<String, String>();
                 encryptMap.put("ToUserName", fromUserName);
