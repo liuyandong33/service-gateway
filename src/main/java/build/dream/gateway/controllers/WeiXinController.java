@@ -238,7 +238,15 @@ public class WeiXinController {
                 returnValue = Constants.SUCCESS;
             }
         } else {
-            KafkaUtils.send(Constants.WEI_XIN_MESSAGE_TOPIC, UUID.randomUUID().toString(), GsonUtils.toJson(xmlMap));
+            String msgType = xmlMap.get("MsgType");
+            if ("event".equals(msgType)) {
+                String event = xmlMap.get("Event");
+                if ("subscribe".equals(event)) {
+
+                } else if ("unsubscribe".equals(event)) {
+
+                }
+            }
         }
         return returnValue;
     }
