@@ -1,6 +1,9 @@
 package build.dream.gateway.controllers;
 
-import build.dream.common.utils.*;
+import build.dream.common.utils.ApplicationHandler;
+import build.dream.common.utils.MimeMappingUtils;
+import build.dream.common.utils.OutUtils;
+import build.dream.common.utils.ZXingUtils;
 import com.google.zxing.WriterException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +37,33 @@ class MediaController {
         }
         String data = requestParameters.get("data");
         HttpServletResponse httpServletResponse = ApplicationHandler.getHttpServletResponse();
-        httpServletResponse.setContentType(MimeMappingUtils.obtainMimeTypeByExtension(QRCodeUtils.FORMAT_NAME));
+        httpServletResponse.setContentType(MimeMappingUtils.obtainMimeTypeByExtension(ZXingUtils.FORMAT_NAME_PNG));
         OutputStream outputStream = httpServletResponse.getOutputStream();
-        QRCodeUtils.generateQRCode(Integer.parseInt(width), Integer.parseInt(height), data, outputStream);
+        ZXingUtils.generateQRCode(Integer.parseInt(width), Integer.parseInt(height), data, outputStream);
+        outputStream.close();
+    }
+
+    /**
+     * 生成条码
+     */
+    @RequestMapping(value = "/generateBarCode")
+    @ResponseBody
+    public void generateBarCode() throws IOException, WriterException {
+        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
+        String width = requestParameters.get("width");
+        if (StringUtils.isBlank(width)) {
+            width = "400";
+        }
+
+        String height = requestParameters.get("height");
+        if (StringUtils.isBlank(height)) {
+            height = "200";
+        }
+        String data = requestParameters.get("data");
+        HttpServletResponse httpServletResponse = ApplicationHandler.getHttpServletResponse();
+        httpServletResponse.setContentType(MimeMappingUtils.obtainMimeTypeByExtension(ZXingUtils.FORMAT_NAME_PNG));
+        OutputStream outputStream = httpServletResponse.getOutputStream();
+        ZXingUtils.generateBarCode(Integer.parseInt(width), Integer.parseInt(height), data, outputStream);
         outputStream.close();
     }
 
@@ -59,10 +86,36 @@ class MediaController {
         String data = requestParameters.get("data");
         String fileName = requestParameters.get("fileName");
         HttpServletResponse httpServletResponse = ApplicationHandler.getHttpServletResponse();
-        httpServletResponse.setContentType(MimeMappingUtils.obtainMimeTypeByExtension(QRCodeUtils.FORMAT_NAME));
-        httpServletResponse.setHeader("Content-disposition", "attachment;filename=" + fileName + QRCodeUtils.FORMAT_NAME);
+        httpServletResponse.setContentType(MimeMappingUtils.obtainMimeTypeByExtension(ZXingUtils.FORMAT_NAME_PNG));
+        httpServletResponse.setHeader("Content-disposition", "attachment;filename=" + fileName + ZXingUtils.FORMAT_NAME_PNG);
         OutputStream outputStream = httpServletResponse.getOutputStream();
-        QRCodeUtils.generateQRCode(Integer.parseInt(width), Integer.parseInt(height), data, outputStream);
+        ZXingUtils.generateQRCode(Integer.parseInt(width), Integer.parseInt(height), data, outputStream);
+        outputStream.close();
+    }
+
+    /**
+     * 下载二维码
+     */
+    @RequestMapping(value = "/downloadBarCode")
+    @ResponseBody
+    public void downloadBarCode() throws IOException, WriterException {
+        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
+        String width = requestParameters.get("width");
+        if (StringUtils.isBlank(width)) {
+            width = "400";
+        }
+
+        String height = requestParameters.get("height");
+        if (StringUtils.isBlank(height)) {
+            height = "200";
+        }
+        String data = requestParameters.get("data");
+        String fileName = requestParameters.get("fileName");
+        HttpServletResponse httpServletResponse = ApplicationHandler.getHttpServletResponse();
+        httpServletResponse.setContentType(MimeMappingUtils.obtainMimeTypeByExtension(ZXingUtils.FORMAT_NAME_PNG));
+        httpServletResponse.setHeader("Content-disposition", "attachment;filename=" + fileName + ZXingUtils.FORMAT_NAME_PNG);
+        OutputStream outputStream = httpServletResponse.getOutputStream();
+        ZXingUtils.generateBarCode(Integer.parseInt(width), Integer.parseInt(height), data, outputStream);
         outputStream.close();
     }
 
