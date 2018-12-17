@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ElemeService {
     @Transactional(readOnly = true)
-    public String handleElemeCallback(String callbackRequestBody) throws ExecutionException, InterruptedException {
+    public String handleCallback(String callbackRequestBody) throws ExecutionException, InterruptedException {
         JSONObject callbackRequestBodyJsonObject = JSONObject.fromObject(callbackRequestBody);
         Validate.isTrue(ElemeUtils.checkSignature(callbackRequestBodyJsonObject, ConfigurationUtils.getConfiguration(Constants.ELEME_APP_SECRET)), "签名校验未通过！");
 
@@ -33,14 +33,14 @@ public class ElemeService {
         boolean setnxSuccessful = CacheUtils.setnx(key, key);
         String handleResult = null;
         if (setnxSuccessful) {
-            handleResult = handleElemeCallback(key, uuid, callbackRequestBodyJsonObject);
+            handleResult = handleCallback(key, uuid, callbackRequestBodyJsonObject);
         } else {
             handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
         }
         return handleResult;
     }
 
-    private String handleElemeCallback(String key, String uuid, JSONObject callbackRequestBodyJsonObject) throws ExecutionException, InterruptedException {
+    private String handleCallback(String key, String uuid, JSONObject callbackRequestBodyJsonObject) throws ExecutionException, InterruptedException {
         String handleResult = null;
         try {
             CacheUtils.expire(key, 1800, TimeUnit.SECONDS);
