@@ -4,6 +4,7 @@
     <select id="obtainTenantInfo" resultType="build.dream.common.utils.UnderscoreToCamelCaseMap">
         SELECT
         tenant.id,
+        tenant.code,
         tenant.partition_code,
         tenant.business
         FROM eleme_branch_mapping

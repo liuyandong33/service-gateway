@@ -49,12 +49,14 @@ public class ElemeService {
                 handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             } else {
                 BigInteger tenantId = BigInteger.valueOf(MapUtils.getLongValue(tenantInfo, Tenant.FieldName.ID));
+                String tenantCode = MapUtils.getString(tenantInfo, "code");
                 String partitionCode = MapUtils.getString(tenantInfo, Tenant.FieldName.PARTITION_CODE);
                 Map<String, Object> elemeMessage = new HashMap<String, Object>();
                 elemeMessage.put("uuid", uuid);
                 elemeMessage.put("callbackRequestBody", callbackRequestBodyMap);
                 elemeMessage.put("count", 10);
                 elemeMessage.put("tenantId", tenantId);
+                elemeMessage.put("tenantCode", tenantCode);
 
                 String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.ELEME_MESSAGE_TOPIC);
                 ListenableFuture<SendResult<String, String>> listenableFuture = KafkaUtils.send(topic, uuid, GsonUtils.toJson(elemeMessage));
