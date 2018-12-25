@@ -4,7 +4,6 @@ import build.dream.common.annotations.ApiRestAction;
 import build.dream.common.annotations.ModelAndViewAction;
 import build.dream.common.api.ApiRest;
 import build.dream.common.constants.Constants;
-import build.dream.common.exceptions.ApiException;
 import build.dream.common.exceptions.CustomException;
 import build.dream.common.exceptions.Error;
 import build.dream.common.models.BasicModel;
