@@ -1,0 +1,58 @@
+    @RequestMapping(value = "/obtainUserInfo", method = RequestMethod.GET)
+    public String obtainUserInfo() throws Exception {
+        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
+        ObtainUserInfoModel obtainUserInfoModel = ApplicationHandler.instantiateObject(ObtainUserInfoModel.class, requestParameters);
+        obtainUserInfoModel.validateAndThrow();
+
+        String appId = obtainUserInfoModel.getAppId();
+        String scope = obtainUserInfoModel.getScope();
+        String redirectUri = obtainUserInfoModel.getRedirectUri();
+        String state = obtainUserInfoModel.getState();
+
+        Map<String, String> parameters = new HashMap<String, String>();
+        parameters.put("redirectUri", redirectUri);
+        parameters.put("appId", appId);
+
+        String outsideUrl = CommonUtils.getOutsideUrl(Constants.SERVICE_NAME_GATEWAY, "weiXin", "oauthCallback") + "?" + WebUtils.buildQueryString(parameters);
+        String authorizeUrl = WeiXinUtils.generateAuthorizeUrl(appId, scope, outsideUrl, state);
+        return "redirect:" + authorizeUrl;
+    }
+
+    @RequestMapping(value = "/oauthCallback", method = RequestMethod.GET)
+    public String oauthCallback() throws IOException {
+        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
+        String code = requestParameters.get("code");
+        String redirectUri = requestParameters.get("redirectUri");
+        String appId = requestParameters.get("appId");
+        String state = requestParameters.get("state");
+
+        WeiXinPublicAccount weiXinPublicAccount = weiXinService.obtainWeiXinPublicAccount(appId);
+        ValidateUtils.notNull(weiXinPublicAccount, "微信公众号不存在！");
+
+        WeiXinOAuthToken weiXinOAuthToken = WeiXinUtils.obtainOAuthToken(appId, weiXinPublicAccount.getAppSecret(), code);
+
+        Map<String, String> parameters = new HashMap<String, String>();
+
+        String openId = weiXinOAuthToken.getOpenId();
+        parameters.put("openId", openId);
+
+        String scope = weiXinOAuthToken.getScope();
+        if (Constants.SNSAPI_BASE.equals(scope)) {
+
+        } else if (Constants.SNSAPI_USERINFO.equals(scope)) {
+            WeiXinUserInfo weiXinUserInfo = WeiXinUtils.obtainUserInfo(weiXinOAuthToken.getAccessToken(), openId, null);
+            parameters.put("userInfo", GsonUtils.toJson(weiXinUserInfo));
+        }
+
+        if (StringUtils.isNotBlank(state)) {
+            parameters.put("state", state);
+        }
+
+        StringBuilder url = new StringBuilder(redirectUri);
+        if (redirectUri.indexOf("?") >= 0) {
+            url.append("&");
+        } else {
+            url.append("?");
+        }
+        return "redirect:" + url.append(WebUtils.buildQueryString(parameters)).toString();
+    }
