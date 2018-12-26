@@ -10,16 +10,19 @@
         <connectionSource class="ch.qos.logback.core.db.DataSourceConnectionSource">
             <dataSource class="com.alibaba.druid.pool.DruidDataSource">
                 <driverClassName>com.mysql.cj.jdbc.Driver</driverClassName>
-                <url><![CDATA[jdbc:mysql://localhost:3306/hua-neng?serverTimezone=GMT%2B8&useSSL=true]]></url>
+                <url><![CDATA[jdbc:mysql://localhost:3306/log-db?serverTimezone=GMT%2B8&useSSL=true]]></url>
                 <username>root</username>
                 <password>root</password>
+                <maxActive>100</maxActive>
+                <initialSize>1</initialSize>
+                <maxWait>60000</maxWait>
             </dataSource>
         </connectionSource>
-    </appender>
+    </appender>-->
 
-    <appender name="async" class="ch.qos.logback.classic.AsyncAppender">
+    <!--<appender name="async" class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
-        <queueSize>512</queueSize>
+        <queueSize>5</queueSize>
         <appender-ref ref="database"></appender-ref>
     </appender>-->
 
