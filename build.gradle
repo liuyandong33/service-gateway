@@ -3,12 +3,13 @@ version "1.0.0"
 
 buildscript {
     ext {
-        springBootVersion = "2.0.0.RELEASE"
+        springBootVersion = "2.1.0.RELEASE"
         springCloudVersion = "Finchley.RELEASE"
+        projectName = "service-gateway"
     }
     repositories {
         mavenLocal()
-        maven { url "https://repo.spring.io/libs-milestone" }
+        maven { url "${mavenPublicRepositoryUrl}" }
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -21,10 +22,11 @@ apply plugin: "org.springframework.boot"
 apply plugin: "io.spring.dependency-management"
 apply plugin: "idea"
 apply plugin: "war"
+apply plugin: "maven-publish"
 
 repositories {
     mavenLocal()
-    maven { url "https://repo.spring.io/libs-milestone" }
+    maven { url "${mavenPublicRepositoryUrl}" }
 }
 
 dependencyManagement {
@@ -34,12 +36,13 @@ dependencyManagement {
 }
 
 dependencies {
-    compile fileTree(include: ["*.jar"], dir: "libs")
+//    compile fileTree(include: ["*.jar"], dir: "libs")
+    compile("build.dream:lib-common:0.1.0-SNAPSHOT")
     compile("org.scala-lang:scala-library:2.12.5")
     compile("org.springframework.cloud:spring-cloud-starter-zookeeper-discovery")
     compile("org.springframework.cloud:spring-cloud-starter-zookeeper-config")
     compile("org.springframework.cloud:spring-cloud-starter-netflix-zuul")
-    compile("org.springframework.kafka:spring-kafka:2.1.5.RELEASE")
+    compile("org.springframework.kafka:spring-kafka:2.2.2.RELEASE")
     compile("org.springframework.boot:spring-boot-starter-data-redis")
 
     compile("org.mybatis.spring.boot:mybatis-spring-boot-starter:1.3.0")
@@ -54,4 +57,39 @@ dependencies {
 
     compile("org.apache.tomcat.embed:tomcat-embed-jasper")
     compile("org.springframework.boot:spring-boot-starter-amqp")
+}
+
+publishing {
+    repositories {
+        if (project.hasProperty("release")) {
+            maven {
+                url "${mavenReleasesRepositoryUrl}"
+                credentials {
+                    username = "${nexusUserName}"
+                    password = "${nexusPassword}"
+                }
+            }
+        } else {
+            maven {
+                url "${mavenSnapshotsRepositoryUrl}"
+                credentials {
+                    username = "${nexusUserName}"
+                    password = "${nexusPassword}"
+                }
+            }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            artifacts = ["build/libs/${projectName}-${version}.jar"]
+
+            groupId project.group
+            if (!project.hasProperty("release")) {
+                version version + "-SNAPSHOT"
+            } else {
+                version version
+            }
+            artifactId = projectName
+        }
+    }
 }
