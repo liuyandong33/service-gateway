@@ -128,6 +128,6 @@ class MediaController {
     public ResponseEntity<byte[]> doGet() throws IOException {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
         String url = requestParameters.get("url");
-        return OutUtils.doGet(url, null);
+        return OutUtils.doGetOrdinaryWithRequestParameters(url, null, null);
     }
 }
