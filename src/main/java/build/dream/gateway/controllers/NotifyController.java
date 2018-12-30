@@ -35,7 +35,7 @@ public class NotifyController extends BasicController {
         return returnValue;
     }
 
-    @RequestMapping(value = "/weiPayXinCallback")
+    @RequestMapping(value = "/weiXinCallback")
     @ResponseBody
     public String weiXinCallback(HttpServletRequest httpServletRequest) {
         String returnValue = null;
