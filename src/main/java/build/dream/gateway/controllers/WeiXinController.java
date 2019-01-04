@@ -1,15 +1,11 @@
 package build.dream.gateway.controllers;
 
 import build.dream.common.beans.ComponentAccessToken;
-import build.dream.common.beans.WeiXinOAuthToken;
-import build.dream.common.beans.WeiXinUserInfo;
 import build.dream.common.constants.Constants;
 import build.dream.common.saas.domains.WeiXinAuthorizerInfo;
 import build.dream.common.saas.domains.WeiXinAuthorizerToken;
 import build.dream.common.saas.domains.WeiXinOpenPlatformApplication;
-import build.dream.common.saas.domains.WeiXinPublicAccount;
 import build.dream.common.utils.*;
-import build.dream.gateway.models.weixin.ObtainUserInfoModel;
 import build.dream.gateway.services.WeiXinService;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
@@ -19,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -185,6 +180,11 @@ public class WeiXinController {
 
                 } else if ("unsubscribe".equals(event)) {
 
+                } else if ("CLICK".equals(event)) {
+                    String eventKey = xmlMap.get("EventKey");
+                    String[] array = eventKey.split("_");
+                    String tenantId = array[0];
+                    String weiXinMenuId = array[1];
                 }
             }
         }
