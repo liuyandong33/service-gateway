@@ -185,6 +185,11 @@ public class WeiXinController {
                     String[] array = eventKey.split("_");
                     String tenantId = array[0];
                     String weiXinMenuId = array[1];
+                } else if ("VIEW".equals(event)) {
+                    String eventKey = xmlMap.get("EventKey");
+                    String[] array = eventKey.split("_");
+                    String tenantId = array[0];
+                    String weiXinMenuId = array[1];
                 }
             }
         }
