@@ -183,13 +183,15 @@ public class WeiXinController {
                 } else if ("CLICK".equals(event)) {
                     String eventKey = xmlMap.get("EventKey");
                     String[] array = eventKey.split("_");
-                    String tenantId = array[0];
-                    String weiXinMenuId = array[1];
+                    String partitionCode = array[0];
+                    String tenantId = array[1];
+                    String weiXinMenuId = array[2];
                 } else if ("VIEW".equals(event)) {
                     String eventKey = xmlMap.get("EventKey");
                     String[] array = eventKey.split("_");
-                    String tenantId = array[0];
-                    String weiXinMenuId = array[1];
+                    String partitionCode = array[0];
+                    String tenantId = array[1];
+                    String weiXinMenuId = array[2];
                 }
             }
         }
