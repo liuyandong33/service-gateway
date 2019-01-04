@@ -1,5 +1,6 @@
 package build.dream.gateway.controllers;
 
+import build.dream.common.api.ApiRest;
 import build.dream.common.beans.ComponentAccessToken;
 import build.dream.common.constants.Constants;
 import build.dream.common.saas.domains.WeiXinAuthorizerInfo;
@@ -127,12 +128,12 @@ public class WeiXinController {
         String fromUserName = xmlMap.get("FromUserName");
         String toUserName = xmlMap.get("ToUserName");
 
+        String timeStamp = String.valueOf(System.currentTimeMillis() / 1000);
         String returnValue = null;
         if (WEI_XIN_AUTOMATED_TESTING_PUBLIC_ACCOUNT_APP_ID.equals(appId) || WEI_XIN_AUTOMATED_TESTING_MINI_PROGRAM_APP_ID.equals(appId)) {
             String content = xmlMap.get("Content");
             String nonce = requestParameters.get("nonce");
             if ("TESTCOMPONENT_MSG_TYPE_TEXT".equals(content)) {
-                String timeStamp = String.valueOf(System.currentTimeMillis() / 1000);
                 Map<String, String> map = new HashMap<String, String>();
                 map.put("ToUserName", fromUserName);
                 map.put("FromUserName", toUserName);
@@ -186,6 +187,22 @@ public class WeiXinController {
                     String partitionCode = array[0];
                     String tenantId = array[1];
                     String weiXinMenuId = array[2];
+
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("tenantId", tenantId);
+                    params.put("weiXinMenuId", weiXinMenuId);
+                    ApiRest apiRest = ProxyUtils.doGetWithRequestParameters(partitionCode, Constants.SERVICE_NAME_CATERING, "weiXin", "obtainMessageContent", params);
+                    ValidateUtils.isTrue(apiRest.isSuccessful(), apiRest.getError());
+                    String content = apiRest.getData().toString();
+
+                    Map<String, String> encryptMap = new HashMap<String, String>();
+                    encryptMap.put("ToUserName", fromUserName);
+                    encryptMap.put("FromUserName", toUserName);
+                    encryptMap.put("CreateTime", timeStamp);
+                    encryptMap.put("MsgType", "text");
+                    encryptMap.put("Content", content);
+
+                    returnValue = XmlUtils.mapToXmlString(encryptMap);
                 } else if ("VIEW".equals(event)) {
                     String eventKey = xmlMap.get("EventKey");
                     String[] array = eventKey.split("_");
