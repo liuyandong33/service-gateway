@@ -59,7 +59,7 @@ public class WeiXinController {
         String infoType = encryptMap.get("InfoType");
         if ("component_verify_ticket".equals(infoType)) {
             String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
-            CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKET, appId, componentVerifyTicket);
+            CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKETS, appId, componentVerifyTicket);
         } else if ("authorized".equals(infoType)) {
 
         } else if ("unauthorized".equals(infoType)) {
