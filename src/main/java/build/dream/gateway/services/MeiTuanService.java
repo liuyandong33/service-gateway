@@ -24,7 +24,7 @@ public class MeiTuanService {
     @Transactional(readOnly = true)
     public String handleCallback(Map<String, String> callbackParameters, Integer type) throws ExecutionException, InterruptedException {
         String uuid = DigestUtils.md5Hex(GsonUtils.toJson(callbackParameters));
-        boolean setnxSuccessful = CacheUtils.setnx(uuid, uuid);
+        boolean setnxSuccessful = CommonRedisUtils.setnx(uuid, uuid);
         String handleResult = null;
         if (setnxSuccessful) {
             handleCallback(uuid, callbackParameters, type);
@@ -37,7 +37,7 @@ public class MeiTuanService {
     public String handleCallback(String uuid, Map<String, String> callbackParameters, Integer type) throws ExecutionException, InterruptedException {
         String handleResult = null;
         try {
-            CacheUtils.expire(uuid, 1800, TimeUnit.SECONDS);
+            CommonRedisUtils.expire(uuid, 1800, TimeUnit.SECONDS);
 
             String ePoiId = callbackParameters.get("ePoiId");
             ApplicationHandler.notBlank(ePoiId, "ePoiId");
@@ -64,7 +64,7 @@ public class MeiTuanService {
                 RecordMetadata recordMetadata = sendResult.getRecordMetadata();
             }
         } catch (Exception e) {
-            CacheUtils.delete(uuid);
+            CommonRedisUtils.del(uuid);
             throw e;
         }
         return handleResult;

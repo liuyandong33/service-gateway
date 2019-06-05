@@ -28,7 +28,7 @@ public class ElemeService {
 
         String uuid = DigestUtils.md5Hex(MapUtils.getString(callbackRequestBodyMap, "message"));
         String key = "eleme_callback_sign_" + uuid;
-        boolean setnxSuccessful = CacheUtils.setnx(key, key);
+        boolean setnxSuccessful = CommonRedisUtils.setnx(key, key);
         String handleResult = null;
         if (setnxSuccessful) {
             handleResult = handleCallback(key, uuid, callbackRequestBodyMap);
@@ -41,7 +41,7 @@ public class ElemeService {
     private String handleCallback(String key, String uuid, Map<String, Object> callbackRequestBodyMap) throws ExecutionException, InterruptedException {
         String handleResult = null;
         try {
-            CacheUtils.expire(key, 1800, TimeUnit.SECONDS);
+            CommonRedisUtils.expire(key, 1800, TimeUnit.SECONDS);
             BigInteger shopId = BigInteger.valueOf(MapUtils.getLongValue(callbackRequestBodyMap, "shopId"));
 
             Map<String, Object> tenantInfo = DatabaseHelper.callMapperMethod(TenantMapper.class, "obtainTenantInfo", TupleUtils.buildTuple2(BigInteger.class, shopId));
@@ -66,7 +66,7 @@ public class ElemeService {
                 handleResult = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             }
         } catch (Exception e) {
-            CacheUtils.delete(key);
+            CommonRedisUtils.del(key);
             throw e;
         }
         return handleResult;

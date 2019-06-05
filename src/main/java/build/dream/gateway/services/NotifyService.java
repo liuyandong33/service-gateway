@@ -64,7 +64,7 @@ public class NotifyService {
     public void executeNotify(NotifyRecord notifyRecord, Map<String, String> callbackParameters) {
         int notifyResult = 0;
         try {
-            String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildHttpEntity(callbackParameters), String.class);
+            String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildApplicationFormUrlEncodedHttpEntity(callbackParameters), String.class);
             if (Constants.SUCCESS.equals(callbackResult)) {
                 notifyResult = 2;
             } else {
@@ -89,7 +89,7 @@ public class NotifyService {
     @Transactional(rollbackFor = Exception.class)
     public void executeNotify(NotifyRecord notifyRecord) {
         Map<String, String> callbackParameters = JacksonUtils.readValueAsMap(notifyRecord.getExternalSystemNotifyRequestBody(), String.class, String.class);
-        String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildHttpEntity(callbackParameters), String.class);
+        String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildApplicationFormUrlEncodedHttpEntity(callbackParameters), String.class);
         if (Constants.SUCCESS.equals(callbackResult)) {
             notifyRecord.setNotifyResult(2);
             DatabaseHelper.update(notifyRecord);

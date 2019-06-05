@@ -2,10 +2,10 @@ package build.dream.gateway.controllers;
 
 import build.dream.common.controllers.BasicController;
 import build.dream.common.utils.ApplicationHandler;
-import build.dream.common.utils.IOUtils;
 import build.dream.common.utils.LogUtils;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.services.ElemeService;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

@@ -9,6 +9,7 @@ import build.dream.common.saas.domains.WeiXinOpenPlatformApplication;
 import build.dream.common.utils.*;
 import build.dream.gateway.services.WeiXinService;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
 import org.dom4j.DocumentException;
@@ -59,7 +60,7 @@ public class WeiXinController {
         String infoType = encryptMap.get("InfoType");
         if ("component_verify_ticket".equals(infoType)) {
             String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
-            CacheUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKETS, appId, componentVerifyTicket);
+            CommonRedisUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKETS, appId, componentVerifyTicket);
         } else if ("authorized".equals(infoType)) {
 
         } else if ("unauthorized".equals(infoType)) {
