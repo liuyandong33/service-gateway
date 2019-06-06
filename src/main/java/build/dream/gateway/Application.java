@@ -1,5 +1,6 @@
 package build.dream.gateway;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -16,6 +17,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 @EnableDiscoveryClient
 @EnableZuulProxy
 @EnableKafka
+@MapperScan(basePackages = {"build.dream.common.mappers", "build.dream.gateway.mappers"})
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);

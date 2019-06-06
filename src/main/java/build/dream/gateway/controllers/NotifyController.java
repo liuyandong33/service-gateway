@@ -11,7 +11,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @Controller
@@ -35,14 +34,30 @@ public class NotifyController extends BasicController {
         return returnValue;
     }
 
-    @RequestMapping(value = "/weiXinCallback")
+    @RequestMapping(value = "/weiXinPayCallback")
     @ResponseBody
-    public String weiXinCallback(HttpServletRequest httpServletRequest) {
+    public String weiXinPayCallback() {
         String returnValue = null;
         Map<String, String> requestParameters = null;
         try {
-            requestParameters = XmlUtils.xmlInputStreamToMap(httpServletRequest.getInputStream());
+            requestParameters = XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8));
             notifyService.handleWeiXinPayCallback(requestParameters);
+            returnValue = Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
+        } catch (Exception e) {
+            LogUtils.error("微信支付回调处理失败", className, "weiPayXinCallback", e, requestParameters);
+            returnValue = Constants.WEI_XIN_PAY_CALLBACK_FAILURE_RETURN_VALUE;
+        }
+        return returnValue;
+    }
+
+    @RequestMapping(value = "/weiXinRefundCallback")
+    @ResponseBody
+    public String weiXinRefundCallback() {
+        String returnValue = null;
+        Map<String, String> requestParameters = null;
+        try {
+            requestParameters = XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8));
+            notifyService.handleXinRefundCallback(requestParameters);
             returnValue = Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
         } catch (Exception e) {
             LogUtils.error("微信支付回调处理失败", className, "weiPayXinCallback", e, requestParameters);
