@@ -1,13 +1,11 @@
 package build.dream.gateway.services;
 
-import build.dream.common.saas.domains.NotifyRecord;
+import build.dream.common.saas.domains.AsyncNotify;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,20 +15,18 @@ import java.util.TreeMap;
 
 @Service
 public class NotifyService {
-    @Autowired
-    private RestTemplate restTemplate;
-
     @Transactional(rollbackFor = Exception.class)
     public void handleAlipayCallback(Map<String, String> callbackParameters) throws IOException {
         String outTradeNo = callbackParameters.get("out_trade_no");
         SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition(NotifyRecord.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
-        NotifyRecord notifyRecord = DatabaseHelper.find(NotifyRecord.class, searchModel);
-        ValidateUtils.notNull(notifyRecord, "通知记录不存在！");
+        searchModel.addSearchCondition(AsyncNotify.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
+        AsyncNotify asyncNotify = DatabaseHelper.find(AsyncNotify.class, searchModel);
+        ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
 
-        if (notifyRecord.getNotifyResult() != 1) {
-            return;
-        }
+        String externalSystemNotifyRequestBody = JacksonUtils.writeValueAsString(callbackParameters);
+        asyncNotify.setExternalSystemNotifyRequestBody(externalSystemNotifyRequestBody);
+        asyncNotify.setNotifyResult(Constants.NOTIFY_RESULT_NOTIFY_SUCCESS);
+        DatabaseHelper.update(asyncNotify);
 
         // 开始验签
         Map<String, String> sortedParameters = new TreeMap<String, String>(callbackParameters);
@@ -40,59 +36,28 @@ public class NotifyService {
         for (Map.Entry<String, String> entry : sortedParameters.entrySet()) {
             sortedParameterPair.add(entry.getKey() + "=" + entry.getValue());
         }
-        boolean isOk = AlipayUtils.verifySign(StringUtils.join(sortedParameterPair, "&"), notifyRecord.getAlipaySignType(), sign, charset, notifyRecord.getAlipayPublicKey());
+        boolean isOk = AlipayUtils.verifySign(StringUtils.join(sortedParameterPair, "&"), asyncNotify.getAlipaySignType(), sign, charset, asyncNotify.getAlipayPublicKey());
         ValidateUtils.isTrue(isOk, "签名验证未通过！");
-        executeNotify(notifyRecord, callbackParameters);
+
+        KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
     }
 
     @Transactional(rollbackFor = Exception.class)
     public void handleWeiXinPayCallback(Map<String, String> callbackParameters) {
         String outTradeNo = callbackParameters.get("out_trade_no");
-        SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition(NotifyRecord.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
-        NotifyRecord notifyRecord = DatabaseHelper.find(NotifyRecord.class, searchModel);
-        ValidateUtils.notNull(notifyRecord, "通知记录不存在！");
 
-        if (notifyRecord.getNotifyResult() != 1) {
-            return;
-        }
+        SearchModel searchModel = SearchModel.builder()
+                .autoSetDeletedFalse()
+                .addSearchCondition(AsyncNotify.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo)
+                .build();
+        AsyncNotify asyncNotify = DatabaseHelper.find(AsyncNotify.class, searchModel);
+        ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
 
-        // 开始验签
-        executeNotify(notifyRecord, callbackParameters);
-    }
+        String externalSystemNotifyRequestBody = JacksonUtils.writeValueAsString(callbackParameters);
+        asyncNotify.setExternalSystemNotifyRequestBody(externalSystemNotifyRequestBody);
+        asyncNotify.setNotifyResult(Constants.NOTIFY_RESULT_NOTIFY_SUCCESS);
+        DatabaseHelper.update(asyncNotify);
 
-    public void executeNotify(NotifyRecord notifyRecord, Map<String, String> callbackParameters) {
-        int notifyResult = 0;
-        try {
-            String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildApplicationFormUrlEncodedHttpEntity(callbackParameters), String.class);
-            if (Constants.SUCCESS.equals(callbackResult)) {
-                notifyResult = 2;
-            } else {
-                notifyResult = 3;
-            }
-        } catch (Exception e) {
-            notifyResult = 3;
-        }
-        notifyRecord.setNotifyResult(notifyResult);
-        notifyRecord.setExternalSystemNotifyRequestBody(GsonUtils.toJson(callbackParameters));
-        DatabaseHelper.update(notifyRecord);
-    }
-
-    @Transactional(readOnly = true)
-    public List<NotifyRecord> obtainAllNotifyRecords() {
-        SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition(NotifyRecord.ColumnName.NOTIFY_RESULT, Constants.SQL_OPERATION_SYMBOL_EQUAL, 3);
-        List<NotifyRecord> notifyRecords = DatabaseHelper.findAll(NotifyRecord.class, searchModel);
-        return notifyRecords;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void executeNotify(NotifyRecord notifyRecord) {
-        Map<String, String> callbackParameters = JacksonUtils.readValueAsMap(notifyRecord.getExternalSystemNotifyRequestBody(), String.class, String.class);
-        String callbackResult = restTemplate.postForObject(notifyRecord.getNotifyUrl(), ProxyUtils.buildApplicationFormUrlEncodedHttpEntity(callbackParameters), String.class);
-        if (Constants.SUCCESS.equals(callbackResult)) {
-            notifyRecord.setNotifyResult(2);
-            DatabaseHelper.update(notifyRecord);
-        }
+        KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
     }
 }
