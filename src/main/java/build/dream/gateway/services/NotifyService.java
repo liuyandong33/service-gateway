@@ -24,8 +24,8 @@ public class NotifyService {
      * @throws IOException
      */
     @Transactional(rollbackFor = Exception.class)
-    public void handleAlipayCallback(Map<String, String> callbackParameters) throws IOException {
-        String outTradeNo = callbackParameters.get("out_trade_no");
+    public void handleAlipayCallback(Map<String, String> callbackParameters, String uuidKey) {
+        String outTradeNo = callbackParameters.get(uuidKey);
         SearchModel searchModel = new SearchModel(true);
         searchModel.addSearchCondition(AsyncNotify.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
         AsyncNotify asyncNotify = DatabaseHelper.find(AsyncNotify.class, searchModel);
