@@ -7,9 +7,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,56 +19,56 @@ public class NotifyService {
      * 处理支付宝回调
      *
      * @param callbackParameters
-     * @throws IOException
+     * @param uuidKey
+     * @return
      */
-    @Transactional(rollbackFor = Exception.class)
-    public void handleAlipayCallback(Map<String, String> callbackParameters, String uuidKey) {
-        String outTradeNo = callbackParameters.get(uuidKey);
-        SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition(AsyncNotify.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo);
-        AsyncNotify asyncNotify = DatabaseHelper.find(AsyncNotify.class, searchModel);
-        ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
+    public String handleAlipayCallback(Map<String, String> callbackParameters, String uuidKey) {
+        try {
+            String uuid = callbackParameters.get(uuidKey);
+            String asyncNotifyJson = CommonRedisUtils.get(uuid);
+            AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
+            ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
 
-        String externalSystemNotifyRequestBody = JacksonUtils.writeValueAsString(callbackParameters);
-        asyncNotify.setExternalSystemNotifyRequestBody(externalSystemNotifyRequestBody);
-        asyncNotify.setNotifyResult(Constants.NOTIFY_RESULT_NOTIFY_SUCCESS);
-        DatabaseHelper.update(asyncNotify);
+            // 开始验签
+            Map<String, String> sortedParameters = new TreeMap<String, String>(callbackParameters);
+            String sign = sortedParameters.remove("sign");
+            String charset = sortedParameters.get("charset");
+            List<String> sortedParameterPair = new ArrayList<String>();
+            for (Map.Entry<String, String> entry : sortedParameters.entrySet()) {
+                sortedParameterPair.add(entry.getKey() + "=" + entry.getValue());
+            }
+            boolean isOk = AlipayUtils.verifySign(StringUtils.join(sortedParameterPair, "&"), asyncNotify.getAlipaySignType(), sign, charset, asyncNotify.getAlipayPublicKey());
+            ValidateUtils.isTrue(isOk, "签名验证未通过！");
 
-        // 开始验签
-        Map<String, String> sortedParameters = new TreeMap<String, String>(callbackParameters);
-        String sign = sortedParameters.remove("sign");
-        String charset = sortedParameters.get("charset");
-        List<String> sortedParameterPair = new ArrayList<String>();
-        for (Map.Entry<String, String> entry : sortedParameters.entrySet()) {
-            sortedParameterPair.add(entry.getKey() + "=" + entry.getValue());
+            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
+            CommonRedisUtils.del(uuid);
+            return Constants.SUCCESS;
+        } catch (Exception e) {
+            LogUtils.error("支付宝回调处理失败", this.getClass().getName(), "alipayCallback", e, callbackParameters);
+            return Constants.FAILURE;
         }
-        boolean isOk = AlipayUtils.verifySign(StringUtils.join(sortedParameterPair, "&"), asyncNotify.getAlipaySignType(), sign, charset, asyncNotify.getAlipayPublicKey());
-        ValidateUtils.isTrue(isOk, "签名验证未通过！");
-
-        KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
     }
 
     /**
      * 处理微信支付回调
      *
      * @param callbackParameters
+     * @param uuidKey
+     * @return
      */
-    @Transactional(rollbackFor = Exception.class)
-    public void handleWeiXinPayCallback(Map<String, String> callbackParameters) {
-        String outTradeNo = callbackParameters.get("out_trade_no");
-        SearchModel searchModel = SearchModel.builder()
-                .autoSetDeletedFalse()
-                .addSearchCondition(AsyncNotify.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outTradeNo)
-                .build();
-        AsyncNotify asyncNotify = DatabaseHelper.find(AsyncNotify.class, searchModel);
-        ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
-
-        String externalSystemNotifyRequestBody = JacksonUtils.writeValueAsString(callbackParameters);
-        asyncNotify.setExternalSystemNotifyRequestBody(externalSystemNotifyRequestBody);
-        asyncNotify.setNotifyResult(Constants.NOTIFY_RESULT_NOTIFY_SUCCESS);
-        DatabaseHelper.update(asyncNotify);
-
-        KafkaUtils.send(asyncNotify.getTopic(), externalSystemNotifyRequestBody);
+    public String handleWeiXinPayCallback(Map<String, String> callbackParameters, String uuidKey) {
+        try {
+            String outTradeNo = callbackParameters.get(uuidKey);
+            String asyncNotifyJson = CommonRedisUtils.get(outTradeNo);
+            AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
+            ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
+            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
+            CommonRedisUtils.del(outTradeNo);
+            return Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
+        } catch (Exception e) {
+            LogUtils.error("微信支付回调处理失败", this.getClass().getName(), "handleWeiXinPayCallback", e, callbackParameters);
+            return Constants.WEI_XIN_PAY_CALLBACK_FAILURE_RETURN_VALUE;
+        }
     }
 
     private String obtainApiV3Key(String appId) {
@@ -84,29 +82,28 @@ public class NotifyService {
      * 处理微信退款回调
      *
      * @param callbackParameters
+     * @param uuidKey
+     * @return
      */
-    @Transactional(rollbackFor = Exception.class)
-    public void handleXinRefundCallback(Map<String, String> callbackParameters) {
-        String appId = callbackParameters.get("appid");
-        String reqInfo = callbackParameters.get("req_info");
-        String apiV3Key = obtainApiV3Key(appId);
-        byte[] bytes = AESUtils.decrypt(Base64.decodeBase64(reqInfo), DigestUtils.md5Hex(apiV3Key).getBytes(Constants.CHARSET_UTF_8), AESUtils.ALGORITHM_AES_ECB_PKCS7PADDING, AESUtils.PROVIDER_NAME_BC);
-        String plaintext = new String(bytes, Constants.CHARSET_UTF_8);
-        Map<String, String> plaintextMap = XmlUtils.xmlStringToMap(plaintext);
-        String outRefundNo = plaintextMap.get("out_refund_no");
+    public String handleXinRefundCallback(Map<String, String> callbackParameters, String uuidKey) {
+        try {
+            String appId = callbackParameters.get("appid");
+            String reqInfo = callbackParameters.get("req_info");
+            String apiV3Key = obtainApiV3Key(appId);
+            byte[] bytes = AESUtils.decrypt(Base64.decodeBase64(reqInfo), DigestUtils.md5Hex(apiV3Key).getBytes(Constants.CHARSET_UTF_8), AESUtils.ALGORITHM_AES_ECB_PKCS7PADDING, AESUtils.PROVIDER_NAME_BC);
+            String plaintext = new String(bytes, Constants.CHARSET_UTF_8);
+            Map<String, String> plaintextMap = XmlUtils.xmlStringToMap(plaintext);
+            String outRefundNo = plaintextMap.get(uuidKey);
 
-        SearchModel searchModel = SearchModel.builder()
-                .autoSetDeletedFalse()
-                .addSearchCondition(AsyncNotify.ColumnName.UUID, Constants.SQL_OPERATION_SYMBOL_EQUAL, outRefundNo)
-                .build();
-        AsyncNotify asyncNotify = DatabaseHelper.find(AsyncNotify.class, searchModel);
-        ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
+            String asyncNotifyJson = CommonRedisUtils.get(outRefundNo);
+            AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
+            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
 
-        String externalSystemNotifyRequestBody = JacksonUtils.writeValueAsString(plaintextMap);
-        asyncNotify.setExternalSystemNotifyRequestBody(externalSystemNotifyRequestBody);
-        asyncNotify.setNotifyResult(Constants.NOTIFY_RESULT_NOTIFY_SUCCESS);
-        DatabaseHelper.update(asyncNotify);
-
-        KafkaUtils.send(asyncNotify.getTopic(), externalSystemNotifyRequestBody);
+            CommonRedisUtils.del(outRefundNo);
+            return Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
+        } catch (Exception e) {
+            LogUtils.error("微信支付回调处理失败", this.getClass().getName(), "handleWeiXinPayCallback", e, callbackParameters);
+            return Constants.WEI_XIN_PAY_CALLBACK_FAILURE_RETURN_VALUE;
+        }
     }
 }
