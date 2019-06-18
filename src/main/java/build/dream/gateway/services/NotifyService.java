@@ -5,10 +5,13 @@ import build.dream.common.saas.domains.AsyncNotify;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.security.PrivateKey;
 import java.util.*;
 
 @Service
@@ -143,13 +146,56 @@ public class NotifyService {
      * @return
      */
     public String handleNewLandCallback(String body, String orgNo) {
-        Map<String, String> bodyMap = JacksonUtils.readValueAsMap(body, String.class, String.class);
-        String datas = bodyMap.get("Datas");
-        String signValue = bodyMap.get("signValue");
+        try {
+            Map<String, String> bodyMap = JacksonUtils.readValueAsMap(body, String.class, String.class);
+            String datas = bodyMap.get("Datas");
+            String signValue = bodyMap.get("signValue");
 
-        NewLandOrgInfo newLandOrgInfo = NewLandUtils.obtainNewLandOrgInfo(orgNo);
-        ValidateUtils.notNull(newLandOrgInfo, "机构信息不存在！");
-        return null;
+            NewLandOrgInfo newLandOrgInfo = NewLandUtils.obtainNewLandOrgInfo(orgNo);
+            ValidateUtils.notNull(newLandOrgInfo, "机构信息不存在！");
+
+            String md5Key = newLandOrgInfo.getMd5Key();
+            ValidateUtils.isTrue(DigestUtils.md5Hex(datas + md5Key).toUpperCase().equals(signValue), "签名错误！");
+
+            PrivateKey privateKey = RSAUtils.restorePrivateKey(newLandOrgInfo.getPrivateKey());
+
+            byte[] encryptedData = Hex.decodeHex(datas.toCharArray());
+            String plaintext = new String(RSAUtils.decryptByPrivateKey(encryptedData, privateKey, RSAUtils.PADDING_MODE_RSA_ECB_PKCS1PADDING), Constants.CHARSET_NAME_ISO_8859_1);
+
+            Map<String, Object> plaintextMap = JacksonUtils.readValueAsMap(plaintext, String.class, Object.class);
+
+            String channelId = MapUtils.getString(plaintextMap, "ChannelId");
+            String asyncNotifyJson = CommonRedisUtils.get(channelId);
+            ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
+
+            AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
+            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(plaintextMap));
+            CommonRedisUtils.del(channelId);
+
+            String rspCode = "000000";
+            String rspDes = StringUtils.rightPad("处理成功", 64, " ");
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("rspCode", rspCode);
+            resultMap.put("rspDes", rspDes);
+            return JacksonUtils.writeValueAsString(resultMap);
+        } catch (Exception e) {
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("body", body);
+            params.put("orgNo", orgNo);
+            LogUtils.error("新大陆回调处理失败", this.getClass().getName(), "handleNewLandCallback", e, params);
+
+            String rspCode = "000001";
+            String rspDes = e.getMessage();
+            if (rspDes.length() > 64) {
+                rspDes = rspDes.substring(0, 64);
+            }
+            rspDes = StringUtils.rightPad(rspDes, 64, " ");
+
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("rspCode", rspCode);
+            resultMap.put("rspDes", rspDes);
+            return JacksonUtils.writeValueAsString(resultMap);
+        }
     }
 
     /**
