@@ -135,6 +135,13 @@ public class NotifyService {
         }
     }
 
+    /**
+     * 处理新大陆回调
+     *
+     * @param body
+     * @param orgNo
+     * @return
+     */
     public String handleNewLandCallback(String body, String orgNo) {
         Map<String, String> bodyMap = JacksonUtils.readValueAsMap(body, String.class, String.class);
         String datas = bodyMap.get("Datas");
