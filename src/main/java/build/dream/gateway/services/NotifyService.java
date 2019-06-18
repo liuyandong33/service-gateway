@@ -24,8 +24,9 @@ public class NotifyService {
         try {
             String outTradeNo = callbackParameters.get(uuidKey);
             String asyncNotifyJson = CommonRedisUtils.get(outTradeNo);
+            ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
+
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
             KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
             CommonRedisUtils.del(outTradeNo);
             return Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
@@ -60,6 +61,8 @@ public class NotifyService {
             String outRefundNo = plaintextMap.get(uuidKey);
 
             String asyncNotifyJson = CommonRedisUtils.get(outRefundNo);
+            ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
+
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
             KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
 
@@ -82,8 +85,9 @@ public class NotifyService {
         try {
             String uuid = callbackParameters.get(uuidKey);
             String asyncNotifyJson = CommonRedisUtils.get(uuid);
+            ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
+
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
 
             // 开始验签
             Map<String, String> sortedParameters = new TreeMap<String, String>(callbackParameters);
@@ -116,8 +120,9 @@ public class NotifyService {
         try {
             String uuid = callbackParameters.get(uuidKey);
             String asyncNotifyJson = CommonRedisUtils.get(uuid);
+            ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
+
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
 
             // 开始验签
             ValidateUtils.isTrue(MiyaUtils.verifySign(callbackParameters, asyncNotify.getMiyaKey()), "签名错误！");
@@ -154,8 +159,9 @@ public class NotifyService {
         try {
             String uuid = callbackParameters.get(uuidKey);
             String asyncNotifyJson = CommonRedisUtils.get(uuid);
+            ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
+
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            ValidateUtils.notNull(asyncNotify, "异步通知不存在！");
 
             // 开始验签
             ValidateUtils.isTrue(UmPayUtils.verifySign(callbackParameters, asyncNotify.getUmPayPlatformCertificate()), "签名错误！");
