@@ -1,6 +1,5 @@
 package build.dream.gateway.services;
 
-import build.dream.common.saas.domains.Tenant;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.mappers.ElemeMapper;
