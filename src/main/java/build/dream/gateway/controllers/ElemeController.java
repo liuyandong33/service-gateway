@@ -23,21 +23,19 @@ public class ElemeController extends BasicController {
     @RequestMapping(value = "/callback")
     @ResponseBody
     public String callback() {
-        String returnValue = null;
         try {
             HttpServletRequest httpServletRequest = ApplicationHandler.getHttpServletRequest();
             String method = httpServletRequest.getMethod();
             if (Constants.REQUEST_METHOD_GET.equals(method)) {
-                returnValue = Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
-            } else if (Constants.REQUEST_METHOD_POST.equals(method)) {
-                String callbackRequestBody = IOUtils.toString(httpServletRequest.getInputStream());
-                Validate.notNull(callbackRequestBody, "回调请求体不能为空！");
-                returnValue = elemeService.handleCallback(callbackRequestBody);
+                return Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             }
+
+            String callbackRequestBody = IOUtils.toString(httpServletRequest.getInputStream());
+            Validate.notNull(callbackRequestBody, "回调请求体不能为空！");
+            return elemeService.handleCallback(callbackRequestBody);
         } catch (Exception e) {
-            LogUtils.error("饿了么订单回调处理失败", className, "elemeCallback", e);
-            returnValue = e.getMessage();
+            LogUtils.error("饿了么订单回调处理失败", className, "callback", e);
+            return e.getMessage();
         }
-        return returnValue;
     }
 }
