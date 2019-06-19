@@ -3,9 +3,10 @@ package build.dream.gateway.services;
 import build.dream.common.saas.domains.Tenant;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
-import build.dream.gateway.mappers.TenantMapper;
+import build.dream.gateway.mappers.ElemeMapper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.MapUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,9 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class ElemeService {
+    @Autowired
+    private ElemeMapper elemeMapper;
+
     @Transactional(readOnly = true)
     public String handleCallback(String callbackRequestBody) {
         Map<String, Object> callbackRequestBodyMap = JacksonUtils.readValueAsMap(callbackRequestBody, String.class, Object.class);
@@ -35,20 +39,22 @@ public class ElemeService {
             CommonRedisUtils.expire(key, 1800, TimeUnit.SECONDS);
             BigInteger shopId = BigInteger.valueOf(MapUtils.getLongValue(callbackRequestBodyMap, "shopId"));
 
-            Map<String, Object> tenantInfo = DatabaseHelper.callMapperMethod(TenantMapper.class, "obtainTenantInfo", TupleUtils.buildTuple2(BigInteger.class, shopId));
-            if (MapUtils.isEmpty(tenantInfo)) {
+            Map<String, Object> mappingInfo = elemeMapper.obtainMappingInfo(shopId);
+            if (MapUtils.isEmpty(mappingInfo)) {
                 return Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             }
 
-            BigInteger tenantId = BigInteger.valueOf(MapUtils.getLongValue(tenantInfo, Tenant.FieldName.ID));
-            String tenantCode = MapUtils.getString(tenantInfo, "code");
-            String partitionCode = MapUtils.getString(tenantInfo, Tenant.FieldName.PARTITION_CODE);
+            BigInteger tenantId = BigInteger.valueOf(MapUtils.getLongValue(mappingInfo, "tenantId"));
+            String tenantCode = MapUtils.getString(mappingInfo, "tenantCode");
+            BigInteger branchId = BigInteger.valueOf(MapUtils.getLongValue(mappingInfo, "branchId"));
+            String partitionCode = MapUtils.getString(mappingInfo, "partitionCode");
             Map<String, Object> elemeMessage = new HashMap<String, Object>();
             elemeMessage.put("uuid", uuid);
             elemeMessage.put("callbackRequestBody", callbackRequestBodyMap);
             elemeMessage.put("count", 10);
             elemeMessage.put("tenantId", tenantId);
             elemeMessage.put("tenantCode", tenantCode);
+            elemeMessage.put("branchId", branchId);
 
             String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.ELEME_MESSAGE_TOPIC);
             KafkaUtils.send(topic, uuid, GsonUtils.toJson(elemeMessage));
