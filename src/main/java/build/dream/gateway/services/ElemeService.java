@@ -19,7 +19,7 @@ public class ElemeService {
     @Transactional(readOnly = true)
     public String handleCallback(String callbackRequestBody) {
         Map<String, Object> callbackRequestBodyMap = JacksonUtils.readValueAsMap(callbackRequestBody, String.class, Object.class);
-//        Validate.isTrue(ElemeUtils.checkSignature(callbackRequestBodyMap, ConfigurationUtils.getConfiguration(Constants.ELEME_APP_SECRET)), "签名校验未通过！");
+        ValidateUtils.isTrue(ElemeUtils.verifySignature(callbackRequestBodyMap, ConfigurationUtils.getConfiguration(Constants.ELEME_APP_SECRET)), "签名校验未通过！");
 
         String uuid = DigestUtils.md5Hex(MapUtils.getString(callbackRequestBodyMap, "message"));
         String key = "eleme_callback_sign_" + uuid;
