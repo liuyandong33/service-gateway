@@ -1,6 +1,5 @@
 package build.dream.gateway.controllers;
 
-import build.dream.common.controllers.BasicController;
 import build.dream.common.utils.ApplicationHandler;
 import build.dream.common.utils.XmlUtils;
 import build.dream.gateway.constants.Constants;
@@ -15,7 +14,7 @@ import java.io.IOException;
 
 @Controller
 @RequestMapping(value = "/notify")
-public class NotifyController extends BasicController {
+public class NotifyController {
     @Autowired
     private NotifyService notifyService;
 
