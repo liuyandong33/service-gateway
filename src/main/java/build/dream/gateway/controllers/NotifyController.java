@@ -34,6 +34,8 @@ public class NotifyController extends BasicController {
             return notifyService.handleNewLandCallback(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8), uuidKey);
         } else if (Constants.NOTIFY_TYPE_UM_PAY.equals(type)) {
             return notifyService.handleUmPayCallback(ApplicationHandler.getRequestParameters(), uuidKey);
+        } else if (Constants.NOTIFY_TYPE_DADA_ORDER_CALLBACK.equals(type)) {
+            return notifyService.handleDadaOrderCallback(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8), uuidKey);
         }
         return null;
     }

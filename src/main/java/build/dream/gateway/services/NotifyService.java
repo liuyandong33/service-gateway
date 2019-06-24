@@ -246,4 +246,23 @@ public class NotifyService {
         responseMap.put("sign_type", signType);
         return "<META NAME=\"MobilePayPlatform\" CONTENT=\"" + WebUtils.concat(responseMap) + "\" />";
     }
+
+    public String handleDadaOrderCallback(String body, String uuidKey) {
+        try {
+            Map<String, Object> bodyMap = JacksonUtils.readValueAsMap(body, String.class, Object.class);
+            String uuid = MapUtils.getString(bodyMap, uuidKey);
+
+            String asyncNotifyJson = CommonRedisUtils.get(uuid);
+            ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
+
+            AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
+
+            // 开始验签
+            KafkaUtils.send(asyncNotify.getTopic(), body);
+            CommonRedisUtils.del(uuid);
+        } catch (Exception e) {
+            LogUtils.error("支付宝回调处理失败", this.getClass().getName(), "handleUmPayCallback", e, body);
+        }
+        return "";
+    }
 }
