@@ -22,21 +22,23 @@ public class NotifyController extends BasicController {
     @RequestMapping(value = "/callback/{type}/{uuidKey}")
     @ResponseBody
     public String callback(@PathVariable(value = "type") String type, @PathVariable(value = "uuidKey") String uuidKey) throws IOException {
-        if (Constants.NOTIFY_TYPE_WEI_XIN_PAY.equals(type)) {
-            return notifyService.handleWeiXinPayCallback(XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8)), uuidKey);
-        } else if (Constants.NOTIFY_TYPE_WEI_XIN_REFUND.equals(type)) {
-            return notifyService.handleXinRefundCallback(XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8)), uuidKey);
-        } else if (Constants.NOTIFY_TYPE_ALIPAY.equals(type)) {
-            return notifyService.handleAlipayCallback(ApplicationHandler.getRequestParameters(), uuidKey);
-        } else if (Constants.NOTIFY_TYPE_MIYA.equals(type)) {
-            return notifyService.handleMiyaCallback(XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8)), uuidKey);
-        } else if (Constants.NOTIFY_TYPE_NEW_LAND.equals(type)) {
-            return notifyService.handleNewLandCallback(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8), uuidKey);
-        } else if (Constants.NOTIFY_TYPE_UM_PAY.equals(type)) {
-            return notifyService.handleUmPayCallback(ApplicationHandler.getRequestParameters(), uuidKey);
-        } else if (Constants.NOTIFY_TYPE_DADA_ORDER_CALLBACK.equals(type)) {
-            return notifyService.handleDadaOrderCallback(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8), uuidKey);
+        switch (type) {
+            case Constants.NOTIFY_TYPE_WEI_XIN_PAY:
+                return notifyService.handleWeiXinPayCallback(XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8)), uuidKey);
+            case Constants.NOTIFY_TYPE_WEI_XIN_REFUND:
+                return notifyService.handleXinRefundCallback(XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8)), uuidKey);
+            case Constants.NOTIFY_TYPE_ALIPAY:
+                return notifyService.handleAlipayCallback(ApplicationHandler.getRequestParameters(), uuidKey);
+            case Constants.NOTIFY_TYPE_MIYA:
+                return notifyService.handleMiyaCallback(XmlUtils.xmlStringToMap(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8)), uuidKey);
+            case Constants.NOTIFY_TYPE_NEW_LAND:
+                return notifyService.handleNewLandCallback(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8), uuidKey);
+            case Constants.NOTIFY_TYPE_UM_PAY:
+                return notifyService.handleUmPayCallback(ApplicationHandler.getRequestParameters(), uuidKey);
+            case Constants.NOTIFY_TYPE_DADA_ORDER_CALLBACK:
+                return notifyService.handleDadaOrderCallback(ApplicationHandler.getRequestBody(Constants.CHARSET_NAME_UTF_8), uuidKey);
+            default:
+                return null;
         }
-        return null;
     }
 }
