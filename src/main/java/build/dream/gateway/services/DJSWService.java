@@ -16,6 +16,9 @@ public class DJSWService {
             String info = CommonRedisUtils.hget(Constants.KEY_JDDJ_VENDER_INFOS, appKey);
             Map<String, Object> infoMap = JacksonUtils.readValueAsMap(info, String.class, Object.class);
 
+            String appSecret = MapUtils.getString(infoMap, "appSecret");
+            ValidateUtils.isTrue(JDDJUtils.verifySign(params, appSecret), "签名错误！");
+
             Map<String, Object> message = new HashMap<String, Object>();
             message.put("tenantId", MapUtils.getLongValue(infoMap, "tenantId"));
             message.put("tenantCode", MapUtils.getString(infoMap, "tenantCode"));
@@ -28,6 +31,7 @@ public class DJSWService {
             KafkaUtils.send(topic, JacksonUtils.writeValueAsString(message));
             return JDDJUtils.buildSuccessResult();
         } catch (Exception e) {
+            LogUtils.error("处理京东到家回调失败", this.getClass().getName(), "handleCallback", e, params);
             return JDDJUtils.buildFailureResult(e.getMessage());
         }
     }
