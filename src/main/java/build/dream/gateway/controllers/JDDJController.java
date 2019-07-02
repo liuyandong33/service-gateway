@@ -2,12 +2,11 @@ package build.dream.gateway.controllers;
 
 import build.dream.common.utils.ApplicationHandler;
 import build.dream.common.utils.CommonRedisUtils;
+import build.dream.common.utils.JDDJUtils;
 import build.dream.common.utils.JacksonUtils;
 import build.dream.gateway.constants.Constants;
-import build.dream.gateway.services.DJSWService;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -17,9 +16,6 @@ import java.util.Map;
 @Controller
 @RequestMapping(value = "/jddj")
 public class JDDJController {
-    @Autowired
-    private DJSWService djswService;
-
     @RequestMapping(value = "/callback")
     @ResponseBody
     public String callback() {
@@ -31,6 +27,6 @@ public class JDDJController {
             CommonRedisUtils.hset(Constants.KEY_JDDJ_TOKENS, venderId, JacksonUtils.writeValueAsString(tokenMap));
         }
 
-        return djswService.buildSuccessResult();
+        return JDDJUtils.buildSuccessResult();
     }
 }
