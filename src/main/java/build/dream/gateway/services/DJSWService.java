@@ -12,8 +12,8 @@ import java.util.Map;
 public class DJSWService {
     public String handleCallback(int type, Map<String, String> params) {
         try {
-            String token = params.get("token");
-            String info = CommonRedisUtils.hget(Constants.KEY_JDDJ_VENDER_INFOS, token);
+            String appKey = params.get("app_key");
+            String info = CommonRedisUtils.hget(Constants.KEY_JDDJ_VENDER_INFOS, appKey);
             Map<String, Object> infoMap = JacksonUtils.readValueAsMap(info, String.class, Object.class);
 
             Map<String, Object> message = new HashMap<String, Object>();
