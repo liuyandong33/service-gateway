@@ -1,8 +1,8 @@
 package build.dream.gateway.services;
 
+import build.dream.common.beans.JDDJVenderInfo;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
-import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -13,21 +13,18 @@ public class DJSWService {
     public String handleCallback(int type, Map<String, String> params) {
         try {
             String appKey = params.get("app_key");
-            String info = CommonRedisUtils.hget(Constants.KEY_JDDJ_VENDER_INFOS, appKey);
-            Map<String, Object> infoMap = JacksonUtils.readValueAsMap(info, String.class, Object.class);
+            JDDJVenderInfo jddjVenderInfo = JDDJUtils.obtainJDDJVenderInfo(appKey);
 
-            String appSecret = MapUtils.getString(infoMap, "appSecret");
-            ValidateUtils.isTrue(JDDJUtils.verifySign(params, appSecret), "签名错误！");
+            ValidateUtils.isTrue(JDDJUtils.verifySign(params, jddjVenderInfo.getAppSecret()), "签名错误！");
 
             Map<String, Object> message = new HashMap<String, Object>();
-            message.put("tenantId", MapUtils.getLongValue(infoMap, "tenantId"));
-            message.put("tenantCode", MapUtils.getString(infoMap, "tenantCode"));
-            message.put("branchId", MapUtils.getString(infoMap, "branchId"));
+            message.put("tenantId", jddjVenderInfo.getTenantId());
+            message.put("tenantCode", jddjVenderInfo.getTenantCode());
+            message.put("branchId", jddjVenderInfo.getBranchId());
             message.put("type", type);
             message.put("body", params);
 
-            String partitionCode = MapUtils.getString(infoMap, "partitionCode");
-            String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.JDDJ_MESSAGE_TOPIC);
+            String topic = jddjVenderInfo.getPartitionCode() + "_" + ConfigurationUtils.getConfiguration(Constants.JDDJ_MESSAGE_TOPIC);
             KafkaUtils.send(topic, JacksonUtils.writeValueAsString(message));
             return JDDJUtils.buildSuccessResult();
         } catch (Exception e) {
