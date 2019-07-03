@@ -27,6 +27,13 @@ public class JDDJController {
             CommonRedisUtils.hset(Constants.KEY_JDDJ_TOKENS, venderId, JacksonUtils.writeValueAsString(tokenMap));
         }
 
+        String code = requestParameters.get("code");
+        if (StringUtils.isNotBlank(code)) {
+            Map<String, Object> codeMap = JacksonUtils.readValueAsMap(token, String.class, Object.class);
+            String venderId = MapUtils.getString(codeMap, "venderId");
+            CommonRedisUtils.hset(Constants.KEY_JDDJ_CODES, venderId, JacksonUtils.writeValueAsString(codeMap));
+        }
+
         return JDDJUtils.buildSuccessResult();
     }
 }
