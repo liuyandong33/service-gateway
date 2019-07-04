@@ -20,7 +20,6 @@ public class DJSWService {
             Map<String, Object> message = new HashMap<String, Object>();
             message.put("tenantId", jddjVenderInfo.getTenantId());
             message.put("tenantCode", jddjVenderInfo.getTenantCode());
-            message.put("branchId", jddjVenderInfo.getBranchId());
             message.put("type", type);
             message.put("body", params);
 

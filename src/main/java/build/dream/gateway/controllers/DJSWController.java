@@ -178,4 +178,92 @@ public class DJSWController {
     public String deliveryCarrierModify() {
         return djswService.handleCallback(Constants.DJSW_TYPE_DELIVERY_CARRIER_MODIFY, ApplicationHandler.getRequestParameters());
     }
+
+    /**
+     * 新增或修改门店消息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/storeCrud")
+    @ResponseBody
+    public String storeCrud() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_STORE_CRUD, ApplicationHandler.getRequestParameters());
+    }
+
+    /**
+     * 新增或修改门店订单评价消息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/orderCommentPush")
+    @ResponseBody
+    public String orderCommentPush() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_ORDER_COMMENT_PUSH, ApplicationHandler.getRequestParameters());
+    }
+
+    /**
+     * 商家回复评价审核完成消息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/orgCommentAudit")
+    @ResponseBody
+    public String orgCommentAudit() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_ORG_COMMENT_AUDIT, ApplicationHandler.getRequestParameters());
+    }
+
+    /**
+     * 查询商家会员信息接口
+     *
+     * @return
+     */
+    @RequestMapping(value = "/queryMerchantMemberInfo")
+    @ResponseBody
+    public String queryMerchantMemberInfo() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_QUERY_MERCHANT_MEMBER_INFO, ApplicationHandler.getRequestParameters());
+    }
+
+    /**
+     * 商家会员买卡成功消息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/memberCreateCard")
+    @ResponseBody
+    public String memberCreateCard() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_MEMBER_CREATE_CARD, ApplicationHandler.getRequestParameters());
+    }
+
+    /**
+     * 商家会员续费成功消息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/memberRenewCard")
+    @ResponseBody
+    public String memberRenewCard() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_MEMBER_RENEW_CARD, ApplicationHandler.getRequestParameters());
+    }
+
+    /**
+     * 超级会员码订单支付成功消息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/orderPaymentSuccess")
+    @ResponseBody
+    public String orderPaymentSuccess() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_ORDER_PAYMENT_SUCCESS, ApplicationHandler.getRequestParameters());
+    }
+
+    /**
+     * 线下会员积分消息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/offlineVipPointsChange")
+    @ResponseBody
+    public String offlineVipPointsChange() {
+        return djswService.handleCallback(Constants.DJSW_TYPE_OFFLINE_VIP_POINTS_CHANGE, ApplicationHandler.getRequestParameters());
+    }
 }
