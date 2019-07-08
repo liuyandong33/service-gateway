@@ -22,6 +22,7 @@ public class DJSWService {
             message.put("tenantCode", jddjVenderInfo.getTenantCode());
             message.put("type", type);
             message.put("body", params);
+            message.put("count", 10);
 
             String topic = jddjVenderInfo.getPartitionCode() + "_" + ConfigurationUtils.getConfiguration(Constants.JDDJ_MESSAGE_TOPIC);
             KafkaUtils.send(topic, JacksonUtils.writeValueAsString(message));
