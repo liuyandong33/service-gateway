@@ -1,10 +1,10 @@
 package build.dream.gateway.configurations;
 
 import build.dream.common.constants.Constants;
+import build.dream.common.redis.CommonRedisCondition;
+import build.dream.common.redis.PartitionRedisCondition;
 import build.dream.common.utils.RedisHelper;
-import build.dream.gateway.redis.CommonRedisCondition;
 import build.dream.gateway.redis.CommonRedisProperties;
-import build.dream.gateway.redis.PartitionRedisCondition;
 import build.dream.gateway.redis.PartitionRedisProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
