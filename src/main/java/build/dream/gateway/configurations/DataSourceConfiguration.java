@@ -10,8 +10,8 @@ import javax.sql.DataSource;
 
 @Configuration
 public class DataSourceConfiguration {
-    @Bean(name = "primaryDataSource")
-    @ConfigurationProperties(prefix = "primary.datasource")
+    @Bean(name = "dataSource")
+    @ConfigurationProperties(prefix = "datasource")
     public DataSource primaryDataSource() {
         return DataSourceBuilder.create().type(DruidDataSource.class).build();
     }
