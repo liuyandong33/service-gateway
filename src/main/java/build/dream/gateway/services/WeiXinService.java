@@ -1,7 +1,7 @@
 package build.dream.gateway.services;
 
-import build.dream.common.saas.domains.WeiXinOpenPlatformApplication;
-import build.dream.common.saas.domains.WeiXinPublicAccount;
+import build.dream.common.domains.saas.WeiXinOpenPlatformApplication;
+import build.dream.common.domains.saas.WeiXinPublicAccount;
 import build.dream.common.utils.AESUtils;
 import build.dream.common.utils.DatabaseHelper;
 import build.dream.common.utils.SearchModel;

@@ -1,7 +1,7 @@
 package build.dream.gateway.services;
 
 import build.dream.common.beans.NewLandOrgInfo;
-import build.dream.common.saas.domains.AsyncNotify;
+import build.dream.common.domains.saas.AsyncNotify;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.codec.binary.Base64;

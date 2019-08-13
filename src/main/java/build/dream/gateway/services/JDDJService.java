@@ -1,7 +1,7 @@
 package build.dream.gateway.services;
 
-import build.dream.common.saas.domains.JDDJCode;
-import build.dream.common.saas.domains.JDDJToken;
+import build.dream.common.domains.saas.JDDJCode;
+import build.dream.common.domains.saas.JDDJToken;
 import build.dream.common.utils.CommonRedisUtils;
 import build.dream.common.utils.DatabaseHelper;
 import build.dream.common.utils.JacksonUtils;

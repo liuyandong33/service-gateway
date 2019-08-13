@@ -1,6 +1,6 @@
 package build.dream.gateway.filters;
 
-import build.dream.common.saas.domains.Tenant;
+import build.dream.common.domains.saas.Tenant;
 import build.dream.common.utils.CommonUtils;
 import build.dream.common.utils.ConfigurationUtils;
 import build.dream.gateway.constants.Constants;

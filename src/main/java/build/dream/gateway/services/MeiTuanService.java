@@ -1,6 +1,6 @@
 package build.dream.gateway.services;
 
-import build.dream.common.saas.domains.Tenant;
+import build.dream.common.domains.saas.Tenant;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
