@@ -26,6 +26,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Controller
 @RequestMapping(value = "/weiXin")
@@ -47,7 +48,7 @@ public class WeiXinController {
         String encrypt = requestBodyMap.get("Encrypt");
 
         WeiXinOpenPlatformApplication weiXinOpenPlatformApplication = weiXinService.obtainWeiXinOpenPlatformApplication(appId);
-        if (weiXinOpenPlatformApplication == null) {
+        if (Objects.isNull(weiXinOpenPlatformApplication)) {
             return Constants.SUCCESS;
         }
         String encodingAesKey = weiXinOpenPlatformApplication.getEncodingAesKey();
@@ -114,7 +115,7 @@ public class WeiXinController {
         String requestBody = IOUtils.toString(inputStream);
 
         WeiXinOpenPlatformApplication weiXinOpenPlatformApplication = weiXinService.obtainWeiXinOpenPlatformApplication(appId);
-        if (weiXinOpenPlatformApplication == null) {
+        if (Objects.isNull(weiXinOpenPlatformApplication)) {
             return Constants.SUCCESS;
         }
 
