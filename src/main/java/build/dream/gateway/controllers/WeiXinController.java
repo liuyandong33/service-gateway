@@ -12,7 +12,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.RandomUtils;
-import org.dom4j.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,7 +39,7 @@ public class WeiXinController {
 
     @RequestMapping(value = "/callback")
     @ResponseBody
-    public String callback(HttpServletRequest httpServletRequest) throws IOException, DocumentException {
+    public String callback(HttpServletRequest httpServletRequest) throws IOException {
         InputStream inputStream = httpServletRequest.getInputStream();
         String requestBody = IOUtils.toString(inputStream);
         Map<String, String> requestBodyMap = XmlUtils.xmlStringToMap(requestBody);
@@ -87,7 +86,7 @@ public class WeiXinController {
 
     @RequestMapping(value = "/authCallback")
     @ResponseBody
-    public String authCallback() throws IOException {
+    public String authCallback() {
         String tenantId = ApplicationHandler.getRequestParameter("tenantId");
         String componentAppId = ApplicationHandler.getRequestParameter("componentAppId");
         String authorizationCode = ApplicationHandler.getRequestParameter("auth_code");
@@ -109,7 +108,7 @@ public class WeiXinController {
 
     @RequestMapping(value = "/messageCallback/{appId}")
     @ResponseBody
-    public String messageCallback(@PathVariable(value = "appId") String appId, HttpServletRequest httpServletRequest) throws IOException, DocumentException {
+    public String messageCallback(@PathVariable(value = "appId") String appId, HttpServletRequest httpServletRequest) throws IOException {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters(httpServletRequest);
         InputStream inputStream = httpServletRequest.getInputStream();
         String requestBody = IOUtils.toString(inputStream);
