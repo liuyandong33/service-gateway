@@ -1,7 +1,6 @@
 package build.dream.gateway.services;
 
 import build.dream.common.domains.saas.WeiXinOpenPlatformApplication;
-import build.dream.common.domains.saas.WeiXinPublicAccount;
 import build.dream.common.utils.AESUtils;
 import build.dream.common.utils.DatabaseHelper;
 import build.dream.common.utils.SearchModel;
@@ -16,14 +15,6 @@ import java.util.Arrays;
 
 @Service
 public class WeiXinService {
-    @Transactional(readOnly = true)
-    public WeiXinPublicAccount obtainWeiXinPublicAccount(String appId) {
-        SearchModel searchModel = new SearchModel(true);
-        searchModel.addSearchCondition(WeiXinPublicAccount.ColumnName.APP_ID, Constants.SQL_OPERATION_SYMBOL_EQUAL, appId);
-        WeiXinPublicAccount weiXinPublicAccount = DatabaseHelper.find(WeiXinPublicAccount.class, searchModel);
-        return weiXinPublicAccount;
-    }
-
     @Transactional(readOnly = true)
     public WeiXinOpenPlatformApplication obtainWeiXinOpenPlatformApplication(String appId) {
         SearchModel searchModel = new SearchModel(true);
@@ -43,7 +34,7 @@ public class WeiXinService {
         byte[] networkOrder = Arrays.copyOfRange(bytes, 16, 20);
         int xmlLength = recoverNetworkBytesOrder(networkOrder);
 
-        String plaintext = new String(Arrays.copyOfRange(original, 20, 20 + xmlLength), build.dream.common.constants.Constants.CHARSET_UTF_8);
+        String plaintext = new String(Arrays.copyOfRange(original, 20, 20 + xmlLength), Constants.CHARSET_UTF_8);
         return plaintext;
     }
 
