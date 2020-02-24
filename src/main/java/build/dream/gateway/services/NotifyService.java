@@ -39,13 +39,6 @@ public class NotifyService {
         }
     }
 
-    private String obtainApiV3Key(String appId) {
-        if ("wx63f5194332cc0f1b".equals(appId)) {
-            return "qingdaozhihuifangxiangruanjian12";
-        }
-        return null;
-    }
-
     /**
      * 处理微信退款回调
      *
@@ -57,7 +50,7 @@ public class NotifyService {
         try {
             String appId = callbackParameters.get("appid");
             String reqInfo = callbackParameters.get("req_info");
-            String apiV3Key = obtainApiV3Key(appId);
+            String apiV3Key = WeiXinPayUtils.obtainApiV3Key(appId);
             byte[] bytes = AESUtils.decrypt(Base64.decodeBase64(reqInfo), DigestUtils.md5Hex(apiV3Key).getBytes(Constants.CHARSET_UTF_8), AESUtils.ALGORITHM_AES_ECB_PKCS7PADDING, AESUtils.PROVIDER_NAME_BC);
             String plaintext = new String(bytes, Constants.CHARSET_UTF_8);
             Map<String, String> plaintextMap = XmlUtils.xmlStringToMap(plaintext);
@@ -66,8 +59,11 @@ public class NotifyService {
             String asyncNotifyJson = CommonRedisUtils.get(outRefundNo);
             ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
 
+            Map<String, String> params = new HashMap<String, String>(callbackParameters);
+            params.remove("req_info");
+            params.putAll(plaintextMap);
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
+            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(params));
 
             CommonRedisUtils.del(outRefundNo);
             return Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;

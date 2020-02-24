@@ -1,11 +1,12 @@
 package build.dream.gateway.controllers;
 
-import build.dream.common.utils.ApplicationHandler;
-import build.dream.common.utils.MimeMappingUtils;
-import build.dream.common.utils.OutUtils;
-import build.dream.common.utils.ZXingUtils;
+import build.dream.common.utils.*;
 import com.google.zxing.WriterException;
+import okhttp3.Headers;
+import okhttp3.Response;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping(value = "/media")
@@ -128,6 +130,20 @@ class MediaController {
     public ResponseEntity<byte[]> doGet() throws IOException {
         Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
         String url = requestParameters.get("url");
-        return OutUtils.doGetOrdinaryWithRequestParameters(url, null, null);
+        Response response = OutUtils.doGetNative(url);
+
+        byte[] body = response.body().bytes();
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        Headers headers = response.headers();
+        Set<String> names = headers.names();
+        for (String name : names) {
+            httpHeaders.addAll(name, headers.values(name));
+        }
+
+        HttpStatus httpStatus = HttpStatus.valueOf(response.code());
+        OkHttpUtils.closeResponse(response);
+        ResponseEntity<byte[]> responseEntity = new ResponseEntity<byte[]>(body, httpHeaders, httpStatus);
+        return responseEntity;
     }
 }

@@ -56,7 +56,7 @@ public class ElemeService {
             elemeMessage.put("branchId", branchId);
 
             String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.ELEME_MESSAGE_TOPIC);
-            KafkaUtils.send(topic, uuid, GsonUtils.toJson(elemeMessage));
+            KafkaUtils.send(topic, uuid, JacksonUtils.writeValueAsString(elemeMessage));
             return Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
         } catch (Exception e) {
             CommonRedisUtils.del(key);
