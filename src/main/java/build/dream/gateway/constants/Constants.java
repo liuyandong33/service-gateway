@@ -12,4 +12,7 @@ public class Constants extends build.dream.common.constants.Constants {
     public static final String MEI_TUAN_CALLBACK_SUCCESS_RETURN_VALUE = "{\"data\": \"OK\"}";
 
     public static final String JDDJ_MESSAGE_TOPIC = "jddj.message.topic";
+
+
+    public static final String MEI_TUAN_SIGN_KEY = "mei.tuan.sign.key";
 }

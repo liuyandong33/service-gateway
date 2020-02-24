@@ -5,52 +5,42 @@ import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.concurrent.ListenableFuture;
 
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class MeiTuanService {
     @Transactional(readOnly = true)
-    public String handleCallback(Map<String, String> callbackParameters, Integer type) throws ExecutionException, InterruptedException {
-        String uuid = DigestUtils.md5Hex(GsonUtils.toJson(callbackParameters));
-        boolean setnxSuccessful = CommonRedisUtils.setnx(uuid, uuid);
-        String handleResult = null;
-        if (setnxSuccessful) {
-            handleCallback(uuid, callbackParameters, type);
-        } else {
-            handleResult = Constants.MEI_TUAN_CALLBACK_SUCCESS_RETURN_VALUE;
+    public String handleCallback(Map<String, String> callbackParameters, Integer type) {
+        String signKey = ConfigurationUtils.getConfiguration(Constants.MEI_TUAN_SIGN_KEY);
+        Map<String, String> sortedMap = new TreeMap<String, String>(callbackParameters);
+        String sign = sortedMap.remove("sign");
+        StringBuilder finalData = new StringBuilder(signKey);
+        for (Map.Entry<String, String> sortedRequestParameter : sortedMap.entrySet()) {
+            finalData.append(sortedRequestParameter.getKey()).append(sortedRequestParameter.getValue());
         }
-        return handleResult;
+        ValidateUtils.isTrue(DigestUtils.sha1Hex(finalData.toString()).equals(sign), "签名错误！");
+
+        String uuid = DigestUtils.md5Hex(JacksonUtils.writeValueAsString(callbackParameters));
+        String key = "mei_tuan_callback_sign_" + uuid;
+        boolean setnxSuccessful = CommonRedisUtils.setnx(key, key);
+        if (setnxSuccessful) {
+            return handleCallback(key, uuid, callbackParameters, type);
+        }
+        return Constants.MEI_TUAN_CALLBACK_SUCCESS_RETURN_VALUE;
     }
 
-    public String handleCallback(String uuid, Map<String, String> callbackParameters, Integer type) throws ExecutionException, InterruptedException {
-        String handleResult = null;
+    public String handleCallback(String key, String uuid, Map<String, String> callbackParameters, Integer type) {
         try {
-            CommonRedisUtils.expire(uuid, 1800, TimeUnit.SECONDS);
+            CommonRedisUtils.expire(key, 1800, TimeUnit.SECONDS);
 
             String ePoiId = callbackParameters.get("ePoiId");
-            ApplicationHandler.notBlank(ePoiId, "ePoiId");
+            Tenant tenant = TenantUtils.obtainTenantInfo(NumberUtils.createBigInteger(ePoiId.split("Z")[0]));
 
-            String[] tenantIdAndBranchIdArray = ePoiId.split("Z");
-            BigInteger tenantId = NumberUtils.createBigInteger(tenantIdAndBranchIdArray[0]);
-            SearchModel searchModel = new SearchModel(true);
-            searchModel.addSearchCondition(Tenant.ColumnName.ID, Constants.SQL_OPERATION_SYMBOL_EQUAL, tenantId);
-            Tenant tenant = DatabaseHelper.find(Tenant.class, searchModel);
-
-            if (tenant == null) {
-                handleResult = Constants.MEI_TUAN_CALLBACK_SUCCESS_RETURN_VALUE;
-            } else {
+            if (Objects.nonNull(tenant)) {
                 Map<String, Object> message = new HashMap<String, Object>();
                 message.put("uuid", uuid);
                 message.put("callbackParameters", callbackParameters);
@@ -58,15 +48,12 @@ public class MeiTuanService {
                 message.put("count", 10);
 
                 String topic = tenant.getPartitionCode() + "_" + ConfigurationUtils.getConfiguration(Constants.MEI_TUAN_MESSAGE_TOPIC);
-                ListenableFuture<SendResult<String, String>> listenableFuture = KafkaUtils.send(topic, UUID.randomUUID().toString(), GsonUtils.toJson(message));
-                SendResult<String, String> sendResult = listenableFuture.get();
-                ProducerRecord<String, String> producerRecord = sendResult.getProducerRecord();
-                RecordMetadata recordMetadata = sendResult.getRecordMetadata();
+                KafkaUtils.send(topic, UUID.randomUUID().toString(), JacksonUtils.writeValueAsString(message));
             }
+            return Constants.MEI_TUAN_CALLBACK_SUCCESS_RETURN_VALUE;
         } catch (Exception e) {
             CommonRedisUtils.del(uuid);
             throw e;
         }
-        return handleResult;
     }
 }
