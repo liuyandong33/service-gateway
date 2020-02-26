@@ -1,6 +1,7 @@
 package build.dream.gateway.services;
 
 import build.dream.common.domains.saas.WeiXinOpenPlatformApplication;
+import build.dream.common.domains.saas.WeiXinPublicAccount;
 import build.dream.common.utils.AESUtils;
 import build.dream.common.utils.DatabaseHelper;
 import build.dream.common.utils.SearchModel;
@@ -97,5 +98,14 @@ public class WeiXinService {
             sourceNumber |= orderBytes[i] & 0xff;
         }
         return sourceNumber;
+    }
+
+    @Transactional(readOnly = true)
+    public WeiXinPublicAccount obtainWeiXinPublicAccount(String appId) {
+        SearchModel searchModel = SearchModel.builder()
+                .autoSetDeletedFalse()
+                .equal(WeiXinPublicAccount.ColumnName.APP_ID, appId)
+                .build();
+        return DatabaseHelper.find(WeiXinPublicAccount.class, searchModel);
     }
 }

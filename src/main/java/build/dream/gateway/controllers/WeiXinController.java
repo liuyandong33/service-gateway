@@ -2,11 +2,14 @@ package build.dream.gateway.controllers;
 
 import build.dream.common.api.ApiRest;
 import build.dream.common.beans.ComponentAccessToken;
+import build.dream.common.beans.WeiXinOAuthToken;
 import build.dream.common.constants.Constants;
 import build.dream.common.domains.saas.WeiXinAuthorizerInfo;
 import build.dream.common.domains.saas.WeiXinAuthorizerToken;
 import build.dream.common.domains.saas.WeiXinOpenPlatformApplication;
+import build.dream.common.domains.saas.WeiXinPublicAccount;
 import build.dream.common.utils.*;
+import build.dream.gateway.models.weixin.AuthorizeModel;
 import build.dream.gateway.services.WeiXinService;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
@@ -214,5 +217,40 @@ public class WeiXinController {
             }
         }
         return returnValue;
+    }
+
+    @RequestMapping(value = "/authorize")
+    public String authorize() throws Exception {
+        AuthorizeModel authorizeModel = ApplicationHandler.instantiateObject(AuthorizeModel.class, ApplicationHandler.getRequestParameters());
+        String appId = authorizeModel.getAppId();
+        String redirectUri = authorizeModel.getRedirectUri();
+        String scope = authorizeModel.getScope();
+        String state = authorizeModel.getState();
+
+        Map<String, String> queryParams = new HashMap<String, String>();
+        queryParams.put("appId", appId);
+        queryParams.put("redirectUri", redirectUri);
+        return "redirect:" + WeiXinUtils.generateAuthorizeUrl(appId, scope, UrlUtils.encode(ConfigurationUtils.getConfiguration(Constants.HOME_URL) + "/weiXin/authorizeCallback?" + WebUtils.buildQueryString(queryParams)), state);
+    }
+
+    @RequestMapping(value = "/authorizeCallback")
+    public String authorizeCallback() {
+        Map<String, String> requestParameters = ApplicationHandler.getRequestParameters();
+        String appId = requestParameters.get("appId");
+        String code = requestParameters.get("code");
+        String redirectUri = requestParameters.get("redirectUri");
+        String state = requestParameters.get("state");
+
+        WeiXinPublicAccount weiXinPublicAccount = weiXinService.obtainWeiXinPublicAccount(appId);
+        WeiXinOAuthToken weiXinOAuthToken = WeiXinUtils.obtainOAuthToken(appId, weiXinPublicAccount.getAppSecret(), code);
+        StringBuilder stringBuilder = new StringBuilder(redirectUri);
+        if (redirectUri.contains("?")) {
+            stringBuilder.append("&");
+        } else {
+            stringBuilder.append("?");
+        }
+        stringBuilder.append("state=").append(UrlUtils.encode(state));
+        stringBuilder.append("&token=").append(UrlUtils.encode(JacksonUtils.writeValueAsString(weiXinOAuthToken)));
+        return "redirect:" + stringBuilder.toString();
     }
 }
