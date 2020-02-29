@@ -1,9 +1,11 @@
 package build.dream.gateway.services;
 
+import build.dream.common.beans.MqConfig;
 import build.dream.common.beans.NewLandOrgInfo;
 import build.dream.common.domains.saas.AsyncNotify;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
+import com.aliyun.openservices.ons.api.Message;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -28,9 +30,8 @@ public class NotifyService {
             String outTradeNo = callbackParameters.get(uuidKey);
             String asyncNotifyJson = CommonRedisUtils.get(outTradeNo);
             ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
-
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
+            send(asyncNotify.getMqConfig(), JacksonUtils.writeValueAsString(callbackParameters));
             CommonRedisUtils.del(outTradeNo);
             return Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
         } catch (Exception e) {
@@ -63,7 +64,7 @@ public class NotifyService {
             params.remove("req_info");
             params.putAll(plaintextMap);
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(params));
+            send(asyncNotify.getMqConfig(), JacksonUtils.writeValueAsString(params));
 
             CommonRedisUtils.del(outRefundNo);
             return Constants.WEI_XIN_PAY_CALLBACK_SUCCESS_RETURN_VALUE;
@@ -99,7 +100,7 @@ public class NotifyService {
             boolean isOk = AlipayUtils.verifySign(StringUtils.join(sortedParameterPair, "&"), asyncNotify.getAlipaySignType(), sign, charset, asyncNotify.getAlipayPublicKey());
             ValidateUtils.isTrue(isOk, "签名验证未通过！");
 
-            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
+            send(asyncNotify.getMqConfig(), JacksonUtils.writeValueAsString(callbackParameters));
             CommonRedisUtils.del(uuid);
             return Constants.SUCCESS;
         } catch (Exception e) {
@@ -125,7 +126,7 @@ public class NotifyService {
 
             // 开始验签
             ValidateUtils.isTrue(MiyaUtils.verifySign(callbackParameters, asyncNotify.getMiyaKey()), "签名错误！");
-            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
+            send(asyncNotify.getMqConfig(), JacksonUtils.writeValueAsString(callbackParameters));
             CommonRedisUtils.del(uuid);
             return "<xml><D1>SUCCESS</D1></xml>";
         } catch (Exception e) {
@@ -165,7 +166,7 @@ public class NotifyService {
             ValidateUtils.notBlank(asyncNotifyJson, "异步通知不存在！");
 
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
-            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(plaintextMap));
+            send(asyncNotify.getMqConfig(), JacksonUtils.writeValueAsString(plaintextMap));
             CommonRedisUtils.del(channelId);
 
             String rspCode = "000000";
@@ -214,7 +215,7 @@ public class NotifyService {
 
             // 开始验签
             ValidateUtils.isTrue(UmPayUtils.verifySign(callbackParameters, asyncNotify.getUmPayPlatformCertificate()), "签名错误！");
-            KafkaUtils.send(asyncNotify.getTopic(), JacksonUtils.writeValueAsString(callbackParameters));
+            send(asyncNotify.getMqConfig(), JacksonUtils.writeValueAsString(callbackParameters));
             CommonRedisUtils.del(uuid);
 
             privateKey = asyncNotify.getUmPayPrivateKey();
@@ -253,12 +254,25 @@ public class NotifyService {
 
             AsyncNotify asyncNotify = JacksonUtils.readValue(asyncNotifyJson, AsyncNotify.class);
 
-            // 开始验签
-            KafkaUtils.send(asyncNotify.getTopic(), body);
+            send(asyncNotify.getMqConfig(), body);
             CommonRedisUtils.del(uuid);
         } catch (Exception e) {
             LogUtils.error("支付宝回调处理失败", this.getClass().getName(), "handleUmPayCallback", e, body);
         }
         return "";
+    }
+
+    public void send(MqConfig mqConfig, String body) {
+        String mqType = mqConfig.getMqType();
+        if (Constants.MQ_TYPE_KAFKA.equals(mqType)) {
+            KafkaUtils.send(mqConfig.getTopic(), body);
+        } else if (Constants.MQ_TYPE_ROCKETMQ.equals(mqType)) {
+            Message message = new Message();
+            message.setBody(body.getBytes(Constants.CHARSET_UTF_8));
+            message.setTopic(mqConfig.getTopic());
+            RocketMQUtils.send(message);
+        } else if (Constants.MQ_TYPE_RABBITMQ.equals(mqType)) {
+            RabbitUtils.convertAndSend(mqConfig.getExchange(), mqConfig.getRoutingKey(), body);
+        }
     }
 }
