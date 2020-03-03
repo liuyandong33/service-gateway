@@ -103,8 +103,8 @@ public class WeiXinController {
         WeiXinAuthorizerToken weiXinAuthorizerToken = WeiXinUtils.apiQueryAuth(componentAccessToken, componentAppId, authorizationCode);
         WeiXinAuthorizerInfo weiXinAuthorizerInfo = WeiXinUtils.apiGetAuthorizerInfo(componentAccessToken, componentAppId, weiXinAuthorizerToken.getAuthorizerAppId());
         weiXinAuthorizerInfo.setTenantId(Long.valueOf(Long.valueOf(tenantId)));
-        weiXinAuthorizerInfo.setCreatedUserId(Long.ONE);
-        weiXinAuthorizerInfo.setUpdatedUserId(Long.ONE);
+        weiXinAuthorizerInfo.setCreatedUserId(0L);
+        weiXinAuthorizerInfo.setUpdatedUserId(0L);
         DatabaseHelper.insert(weiXinAuthorizerInfo);
         return Constants.SUCCESS;
     }
