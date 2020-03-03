@@ -12,7 +12,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigInteger;
 import java.util.Map;
 
 @Service
@@ -37,8 +36,8 @@ public class JDDJService {
                     .uid(MapUtils.getString(tokenMap, "uid"))
                     .userNick(MapUtils.getString(tokenMap, "user_nick"))
                     .venderId(venderId)
-                    .createdUserId(BigInteger.ZERO)
-                    .updatedUserId(BigInteger.ZERO)
+                    .createdUserId(0L)
+                    .updatedUserId(0L)
                     .updatedRemark("处理京东到家回调，保存token！")
                     .build();
             DatabaseHelper.insert(jddjToken);
@@ -60,8 +59,8 @@ public class JDDJService {
             JDDJCode jddjCode = JDDJCode.builder()
                     .code(MapUtils.getString(codeMap, "code"))
                     .venderId(venderId)
-                    .createdUserId(BigInteger.ZERO)
-                    .updatedUserId(BigInteger.ZERO)
+                    .createdUserId(0L)
+                    .updatedUserId(0L)
                     .updatedRemark("处理京东到家回调，保存code！")
                     .build();
             DatabaseHelper.insert(jddjCode);

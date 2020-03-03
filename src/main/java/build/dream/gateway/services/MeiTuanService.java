@@ -4,7 +4,6 @@ import build.dream.common.domains.saas.Tenant;
 import build.dream.common.utils.*;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +37,7 @@ public class MeiTuanService {
             CommonRedisUtils.expire(key, 1800, TimeUnit.SECONDS);
 
             String ePoiId = callbackParameters.get("ePoiId");
-            Tenant tenant = TenantUtils.obtainTenantInfo(NumberUtils.createBigInteger(ePoiId.split("Z")[0]));
+            Tenant tenant = TenantUtils.obtainTenantInfo(Long.valueOf(ePoiId.split("Z")[0]));
 
             if (Objects.nonNull(tenant)) {
                 Map<String, Object> message = new HashMap<String, Object>();

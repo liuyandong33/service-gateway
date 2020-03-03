@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -36,16 +35,16 @@ public class ElemeService {
     private String handleCallback(String key, String uuid, Map<String, Object> callbackRequestBodyMap) {
         try {
             CommonRedisUtils.expire(key, 1800, TimeUnit.SECONDS);
-            BigInteger shopId = BigInteger.valueOf(MapUtils.getLongValue(callbackRequestBodyMap, "shopId"));
+            Long shopId = Long.valueOf(MapUtils.getLongValue(callbackRequestBodyMap, "shopId"));
 
             Map<String, Object> mappingInfo = elemeMapper.obtainMappingInfo(shopId);
             if (MapUtils.isEmpty(mappingInfo)) {
                 return Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
             }
 
-            BigInteger tenantId = BigInteger.valueOf(MapUtils.getLongValue(mappingInfo, "tenantId"));
+            Long tenantId = Long.valueOf(MapUtils.getLongValue(mappingInfo, "tenantId"));
             String tenantCode = MapUtils.getString(mappingInfo, "tenantCode");
-            BigInteger branchId = BigInteger.valueOf(MapUtils.getLongValue(mappingInfo, "branchId"));
+            Long branchId = Long.valueOf(MapUtils.getLongValue(mappingInfo, "branchId"));
             String partitionCode = MapUtils.getString(mappingInfo, "partitionCode");
             Map<String, Object> elemeMessage = new HashMap<String, Object>();
             elemeMessage.put("uuid", uuid);

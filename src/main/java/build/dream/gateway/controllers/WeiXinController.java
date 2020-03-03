@@ -25,7 +25,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -103,9 +102,9 @@ public class WeiXinController {
         String componentAccessToken = WeiXinUtils.obtainComponentAccessToken(componentAppId, componentAppSecret).getComponentAccessToken();
         WeiXinAuthorizerToken weiXinAuthorizerToken = WeiXinUtils.apiQueryAuth(componentAccessToken, componentAppId, authorizationCode);
         WeiXinAuthorizerInfo weiXinAuthorizerInfo = WeiXinUtils.apiGetAuthorizerInfo(componentAccessToken, componentAppId, weiXinAuthorizerToken.getAuthorizerAppId());
-        weiXinAuthorizerInfo.setTenantId(BigInteger.valueOf(Long.valueOf(tenantId)));
-        weiXinAuthorizerInfo.setCreatedUserId(BigInteger.ONE);
-        weiXinAuthorizerInfo.setUpdatedUserId(BigInteger.ONE);
+        weiXinAuthorizerInfo.setTenantId(Long.valueOf(Long.valueOf(tenantId)));
+        weiXinAuthorizerInfo.setCreatedUserId(Long.ONE);
+        weiXinAuthorizerInfo.setUpdatedUserId(Long.ONE);
         DatabaseHelper.insert(weiXinAuthorizerInfo);
         return Constants.SUCCESS;
     }
