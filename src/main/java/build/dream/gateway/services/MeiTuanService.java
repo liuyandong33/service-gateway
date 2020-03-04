@@ -2,6 +2,7 @@ package build.dream.gateway.services;
 
 import build.dream.common.domains.saas.Tenant;
 import build.dream.common.utils.*;
+import build.dream.gateway.constants.ConfigurationKeys;
 import build.dream.gateway.constants.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class MeiTuanService {
     @Transactional(readOnly = true)
     public String handleCallback(Map<String, String> callbackParameters, Integer type) {
-        String signKey = ConfigurationUtils.getConfiguration(Constants.MEI_TUAN_SIGN_KEY);
+        String signKey = ConfigurationUtils.getConfiguration(ConfigurationKeys.MEI_TUAN_SIGN_KEY);
         Map<String, String> sortedMap = new TreeMap<String, String>(callbackParameters);
         String sign = sortedMap.remove("sign");
         StringBuilder finalData = new StringBuilder(signKey);
@@ -46,7 +47,7 @@ public class MeiTuanService {
                 message.put("type", type);
                 message.put("count", 10);
 
-                String topic = tenant.getPartitionCode() + "_" + ConfigurationUtils.getConfiguration(Constants.MEI_TUAN_MESSAGE_TOPIC);
+                String topic = tenant.getPartitionCode() + "_" + ConfigurationUtils.getConfiguration(ConfigurationKeys.MEI_TUAN_MESSAGE_TOPIC);
                 KafkaUtils.send(topic, UUID.randomUUID().toString(), JacksonUtils.writeValueAsString(message));
             }
             return Constants.MEI_TUAN_CALLBACK_SUCCESS_RETURN_VALUE;

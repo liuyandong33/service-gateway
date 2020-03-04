@@ -2,7 +2,7 @@ package build.dream.gateway.services;
 
 import build.dream.common.beans.JDDJVenderInfo;
 import build.dream.common.utils.*;
-import build.dream.gateway.constants.Constants;
+import build.dream.gateway.constants.ConfigurationKeys;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -24,7 +24,7 @@ public class DJSWService {
             message.put("body", params);
             message.put("count", 10);
 
-            String topic = jddjVenderInfo.getPartitionCode() + "_" + ConfigurationUtils.getConfiguration(Constants.JDDJ_MESSAGE_TOPIC);
+            String topic = jddjVenderInfo.getPartitionCode() + "_" + ConfigurationUtils.getConfiguration(ConfigurationKeys.JDDJ_MESSAGE_TOPIC);
             KafkaUtils.send(topic, JacksonUtils.writeValueAsString(message));
             return JDDJUtils.buildSuccessResult();
         } catch (Exception e) {

@@ -7,6 +7,7 @@ import build.dream.common.utils.DatabaseHelper;
 import build.dream.common.utils.JacksonUtils;
 import build.dream.common.utils.UpdateModel;
 import build.dream.gateway.constants.Constants;
+import build.dream.gateway.constants.RedisKeys;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,7 @@ public class JDDJService {
                     .updatedRemark("处理京东到家回调，保存token！")
                     .build();
             DatabaseHelper.insert(jddjToken);
-            CommonRedisUtils.hset(Constants.KEY_JDDJ_TOKENS, venderId, JacksonUtils.writeValueAsString(jddjToken));
+            CommonRedisUtils.hset(RedisKeys.KEY_JDDJ_TOKENS, venderId, JacksonUtils.writeValueAsString(jddjToken));
         }
 
         if (StringUtils.isNotBlank(code)) {

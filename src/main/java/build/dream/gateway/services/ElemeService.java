@@ -1,6 +1,7 @@
 package build.dream.gateway.services;
 
 import build.dream.common.utils.*;
+import build.dream.gateway.constants.ConfigurationKeys;
 import build.dream.gateway.constants.Constants;
 import build.dream.gateway.mappers.ElemeMapper;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -21,7 +22,7 @@ public class ElemeService {
     @Transactional(readOnly = true)
     public String handleCallback(String callbackRequestBody) {
         Map<String, Object> callbackRequestBodyMap = JacksonUtils.readValueAsMap(callbackRequestBody, String.class, Object.class);
-        ValidateUtils.isTrue(ElemeUtils.verifySignature(callbackRequestBodyMap, ConfigurationUtils.getConfiguration(Constants.ELEME_APP_SECRET)), "签名校验未通过！");
+        ValidateUtils.isTrue(ElemeUtils.verifySignature(callbackRequestBodyMap, ConfigurationUtils.getConfiguration(ConfigurationKeys.ELEME_APP_SECRET)), "签名校验未通过！");
 
         String uuid = DigestUtils.md5Hex(MapUtils.getString(callbackRequestBodyMap, "message"));
         String key = "eleme_callback_sign_" + uuid;
@@ -54,7 +55,7 @@ public class ElemeService {
             elemeMessage.put("tenantCode", tenantCode);
             elemeMessage.put("branchId", branchId);
 
-            String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(Constants.ELEME_MESSAGE_TOPIC);
+            String topic = partitionCode + "_" + ConfigurationUtils.getConfiguration(ConfigurationKeys.ELEME_MESSAGE_TOPIC);
             KafkaUtils.send(topic, uuid, JacksonUtils.writeValueAsString(elemeMessage));
             return Constants.ELEME_ORDER_CALLBACK_SUCCESS_RETURN_VALUE;
         } catch (Exception e) {

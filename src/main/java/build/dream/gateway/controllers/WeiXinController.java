@@ -9,6 +9,8 @@ import build.dream.common.domains.saas.WeiXinAuthorizerToken;
 import build.dream.common.domains.saas.WeiXinOpenPlatformApplication;
 import build.dream.common.domains.saas.WeiXinPublicAccount;
 import build.dream.common.utils.*;
+import build.dream.gateway.constants.ConfigurationKeys;
+import build.dream.gateway.constants.RedisKeys;
 import build.dream.gateway.models.weixin.AuthorizeModel;
 import build.dream.gateway.services.WeiXinService;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -62,7 +64,7 @@ public class WeiXinController {
         String infoType = encryptMap.get("InfoType");
         if ("component_verify_ticket".equals(infoType)) {
             String componentVerifyTicket = encryptMap.get("ComponentVerifyTicket");
-            CommonRedisUtils.hset(Constants.KEY_WEI_XIN_COMPONENT_VERIFY_TICKETS, appId, componentVerifyTicket);
+            CommonRedisUtils.hset(RedisKeys.KEY_WEI_XIN_COMPONENT_VERIFY_TICKETS, appId, componentVerifyTicket);
         } else if ("authorized".equals(infoType)) {
 
         } else if ("unauthorized".equals(infoType)) {
@@ -229,7 +231,7 @@ public class WeiXinController {
         Map<String, String> queryParams = new HashMap<String, String>();
         queryParams.put("appId", appId);
         queryParams.put("redirectUri", redirectUri);
-        return "redirect:" + WeiXinUtils.generateAuthorizeUrl(appId, scope, UrlUtils.encode(ConfigurationUtils.getConfiguration(Constants.HOME_URL) + "/weiXin/authorizeCallback?" + WebUtils.buildQueryString(queryParams)), state);
+        return "redirect:" + WeiXinUtils.generateAuthorizeUrl(appId, scope, UrlUtils.encode(ConfigurationUtils.getConfiguration(ConfigurationKeys.HOME_URL) + "/weiXin/authorizeCallback?" + WebUtils.buildQueryString(queryParams)), state);
     }
 
     @RequestMapping(value = "/authorizeCallback")
